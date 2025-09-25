@@ -1,5 +1,4 @@
 // js/tracker.js
-
 import { App } from "./app.js";
 
 export const Tracker = {
@@ -18,29 +17,45 @@ export const Tracker = {
         this.state.initialBankroll = parseFloat(savedBankroll);
     }
     
-    // Setup Download Button
     const downloadBtn = document.createElement('button');
     downloadBtn.textContent = 'Download Bets (CSV)';
     downloadBtn.className = 'btn btn-secondary btn-sm';
     downloadBtn.addEventListener('click', () => this.downloadBets());
-    document.getElementById('refresh-tracker-btn').insertAdjacentElement('afterend', downloadBtn);
+    
+    const refreshBtn = document.getElementById('refresh-tracker-btn');
+    if (refreshBtn) {
+        refreshBtn.insertAdjacentElement('afterend', downloadBtn);
+    }
 
 
     this.renderPerformanceTracker();
 
-    App.elements.modalSaveBtn.addEventListener("click", () =>
-      this.saveTrackedBet()
-    );
-    App.elements.modalCancelBtn.addEventListener("click", () =>
-      App.elements.logPlayModal.classList.add("hidden")
-    );
-    App.elements.trackedPlaysList.addEventListener("click", (e) => {
-      if (e.target.classList.contains("grade-btn")) {
-        const betId = parseInt(e.target.dataset.id);
-        const result = e.target.dataset.result;
-        this.gradeBet(betId, result);
-      }
-    });
+    if(App.elements.modalSaveBtn) {
+        App.elements.modalSaveBtn.addEventListener("click", () =>
+          this.saveTrackedBet()
+        );
+    }
+    if(App.elements.modalCancelBtn) {
+        App.elements.modalCancelBtn.addEventListener("click", () =>
+          App.elements.logPlayModal.classList.add("hidden")
+        );
+    }
+    
+    if (App.elements.trackedPlaysList) {
+        App.elements.trackedPlaysList.addEventListener("click", (e) => {
+          const gradeBtn = e.target.closest(".grade-btn");
+          const deleteBtn = e.target.closest(".delete-btn");
+
+          if (gradeBtn) {
+            const betId = parseInt(gradeBtn.dataset.id);
+            const result = gradeBtn.dataset.result;
+            this.gradeBet(betId, result);
+          } else if (deleteBtn) {
+            const betId = parseInt(deleteBtn.dataset.id);
+            this.deleteBet(betId);
+          }
+        });
+    }
   },
   
   addBet(betData) {
@@ -51,6 +66,12 @@ export const Tracker = {
       this.state.loggedBets.unshift(newBet);
       localStorage.setItem("loggedBets", JSON.stringify(this.state.loggedBets));
       this.renderPerformanceTracker();
+  },
+  
+  deleteBet(betId) {
+    this.state.loggedBets = this.state.loggedBets.filter(bet => bet.id !== betId);
+    localStorage.setItem("loggedBets", JSON.stringify(this.state.loggedBets));
+    this.renderPerformanceTracker();
   },
 
   renderPerformanceTracker() {
@@ -63,20 +84,16 @@ export const Tracker = {
     );
   },
 
-  openTrackPlayModal(item, side, stake, odds) {
-    // ... (This function remains the same)
-  },
-
-  saveTrackedBet() {
-    // ... (This function remains the same)
-  },
-
   gradeBet(betId, result) {
-    // ... (This function remains the same)
+    const betIndex = this.state.loggedBets.findIndex(bet => bet.id === betId);
+    if (betIndex !== -1) {
+        this.state.loggedBets[betIndex].status = result;
+        localStorage.setItem("loggedBets", JSON.stringify(this.state.loggedBets));
+        this.renderPerformanceTracker();
+    }
   },
 
   _renderTrackerUI(listElement, bets, recordEl, plEl, roiEl) {
-    // ... (This function is modified to update availableBankroll)
     if (!listElement || !recordEl || !plEl || !roiEl) return;
     listElement.innerHTML = "";
     let wins = 0,
@@ -127,12 +144,14 @@ export const Tracker = {
           statusContainer.innerHTML = `
             <button class="grade-btn btn btn-success btn-sm" data-id="${bet.id}" data-result="win">Win</button>
             <button class="grade-btn btn btn-secondary btn-sm" data-id="${bet.id}" data-result="push">Push</button>
-            <button class="grade-btn btn-danger btn-sm" data-id="${bet.id}" data-result="loss">Loss</button>`;
+            <button class="grade-btn btn-danger btn-sm" data-id="${bet.id}" data-result="loss">Loss</button>
+            <button class="delete-btn btn btn-danger btn-sm" data-id="${bet.id}">🗑️</button>`;
         } else {
           let statusClass = "text-main-secondary"; 
           if (bet.status === "win") statusClass = "text-green-500";
           if (bet.status === "loss") statusClass = "text-red-500";
-          statusContainer.innerHTML = `<span class="font-bold ${statusClass}">${bet.status.toUpperCase()}</span>`;
+          statusContainer.innerHTML = `<span class="font-bold ${statusClass}">${bet.status.toUpperCase()}</span>
+           <button class="delete-btn btn btn-danger btn-sm" data-id="${bet.id}">🗑️</button>`;
         }
       }
 
@@ -172,9 +191,14 @@ export const Tracker = {
     
     const totalBankroll = this.state.initialBankroll + totalProfit;
     this.state.availableBankroll = totalBankroll - inPlay;
-    document.getElementById('tracker-total-bankroll').textContent = `$${totalBankroll.toFixed(2)}`;
-    document.getElementById('tracker-in-play').textContent = `$${inPlay.toFixed(2)}`;
-    document.getElementById('tracker-available').textContent = `$${this.state.availableBankroll.toFixed(2)}`;
+    
+    const totalBankrollEl = document.getElementById('tracker-total-bankroll');
+    const inPlayEl = document.getElementById('tracker-in-play');
+    const availableEl = document.getElementById('tracker-available');
+    
+    if (totalBankrollEl) totalBankrollEl.textContent = `$${totalBankroll.toFixed(2)}`;
+    if (inPlayEl) inPlayEl.textContent = `$${inPlay.toFixed(2)}`;
+    if (availableEl) availableEl.textContent = `$${this.state.availableBankroll.toFixed(2)}`;
 
   },
   

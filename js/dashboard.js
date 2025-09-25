@@ -12,29 +12,30 @@ export const Dashboard = {
     },
 
     init() {
-        // Initial setup runs once
         this.loadAllData();
         this.addEventListeners();
     },
 
     addEventListeners() {
-        // Centralized event listeners for dashboard controls
-        const elementsToWatch = [
+        const changeElements = [
             App.elements.sportFilter,
             App.elements.sortBySelect,
-            App.elements.watchlistFilterBtn,
             App.elements.globalBankrollInput,
             App.elements.globalKellyMultiplierInput,
         ];
 
-        elementsToWatch.forEach(el => {
-            if (el) {
-                const eventType = (el.tagName === 'INPUT' || el.tagName === 'SELECT') ? 'change' : 'click';
-                el.addEventListener(eventType, () => this.handleFilterOrSortChange());
-            }
+        changeElements.forEach(el => {
+            if (el) el.addEventListener('change', () => this.renderAll());
         });
+
+        if (App.elements.watchlistFilterBtn) {
+            App.elements.watchlistFilterBtn.addEventListener('click', (e) => {
+                e.currentTarget.classList.toggle("active");
+                this.state.isWatchlistFilterActive = e.currentTarget.classList.contains("active");
+                this.renderAll();
+            });
+        }
         
-        // Event delegation for dynamically created cards
         if (App.elements.gameSlate) {
             App.elements.gameSlate.addEventListener("click", (e) => {
                 const starButton = e.target.closest(".watchlist-star");
@@ -50,17 +51,6 @@ export const Dashboard = {
                 }
             });
         }
-    },
-
-    handleFilterOrSortChange() {
-        if (App.elements.watchlistFilterBtn) {
-            this.state.isWatchlistFilterActive = App.elements.watchlistFilterBtn.classList.contains("active");
-            if(event.currentTarget === App.elements.watchlistFilterBtn) {
-                 this.state.isWatchlistFilterActive = !this.state.isWatchlistFilterActive;
-                 App.elements.watchlistFilterBtn.classList.toggle("active", this.state.isWatchlistFilterActive);
-            }
-        }
-        this.renderAll();
     },
     
     loadAllData() {
@@ -81,7 +71,6 @@ export const Dashboard = {
     },
 
     processData() {
-        // Combine and process both game and prop data into a single structure
         const combinedData = [];
 
         App.state.allGameData.forEach(game => {
@@ -117,9 +106,7 @@ export const Dashboard = {
     },
 
     renderAll() {
-        // Master render function to update all parts of the dashboard
         const filteredData = this.getFilteredAndSortedData();
-
         this.renderGameSlate(filteredData);
         this.renderDashboardWidgets(filteredData);
     },
@@ -139,7 +126,7 @@ export const Dashboard = {
 
         if (sortBy === 'edge') {
             data.sort((a, b) => b.maxEdge - a.maxEdge);
-        } else { // Default to gameTime
+        } else { 
             data.sort((a, b) => new Date(a.gameTime) - new Date(b.gameTime));
         }
         
@@ -173,7 +160,7 @@ export const Dashboard = {
     renderWatchlist(data) {
         const container = document.getElementById('watchlist-games');
         if (!container) return;
-        container.innerHTML = `<h3 class="text-lg font-semibold text-main-primary mb-2">Watchlist Games</h3>`; // Reset
+        container.innerHTML = `<h3 class="text-lg font-semibold text-main-primary mb-2">Watchlist Games</h3>`;
         const watchlistData = data.filter(item => App.state.starredGames.includes(item.id)).slice(0, 5);
         if(watchlistData.length === 0) {
             container.innerHTML += `<p class="text-sm text-main-secondary">No games on your watchlist.</p>`;
@@ -187,7 +174,7 @@ export const Dashboard = {
     renderTopPlays(data) {
         const container = document.getElementById('top-plays');
         if (!container) return;
-        container.innerHTML = `<h3 class="text-lg font-semibold text-main-primary mb-2">Top Plays</h3>`; // Reset
+        container.innerHTML = `<h3 class="text-lg font-semibold text-main-primary mb-2">Top Plays</h3>`;
 
         const bankroll = parseFloat(App.elements.globalBankrollInput.value) || 0;
         const kelly = parseFloat(App.elements.globalKellyMultiplierInput.value) || 0;
@@ -216,7 +203,7 @@ export const Dashboard = {
     renderBiggestEdges(data) {
         const container = document.getElementById('biggest-edges');
         if (!container) return;
-        container.innerHTML = `<h3 class="text-lg font-semibold text-main-primary mb-2">Biggest Edges</h3>`; // Reset
+        container.innerHTML = `<h3 class="text-lg font-semibold text-main-primary mb-2">Biggest Edges</h3>`;
 
         const topEdges = [...data].sort((a, b) => b.maxEdge - a.maxEdge).slice(0, 5);
         
@@ -235,11 +222,9 @@ export const Dashboard = {
     renderVigHeatmap(data) {
          const container = document.getElementById('vig-heatmap');
          if (!container) return;
-         container.innerHTML = `<h3 class="text-lg font-semibold text-main-primary mb-2">Vig Heatmap</h3>`; // Reset
-         
+         container.innerHTML = `<h3 class="text-lg font-semibold text-main-primary mb-2">Vig Heatmap</h3>`;
          container.innerHTML += `<p class="text-sm text-main-secondary">Vig data not available.</p>`;
     },
-
 
     createCard(item) {
         const card = document.createElement("div");
@@ -318,7 +303,7 @@ export const Dashboard = {
     getBestBet(item, bankroll, kellyMultiplier) {
         let bestBet = { side: null, stake: 0, odds: 0, edge: 0 };
         
-        if (item.edgeA > 0) {
+        if (item.edgeA > 0 && item.line.marketOdds && item.line.marketOdds.oddsA) {
             const p = item.trueProbA;
             const q = 1 - p;
             const b = App.helpers.americanToDecimal(item.line.marketOdds.oddsA) - 1;
@@ -331,7 +316,7 @@ export const Dashboard = {
             }
         }
         
-        if (item.edgeB > 0) {
+        if (item.edgeB > 0 && item.line.marketOdds && item.line.marketOdds.oddsB) {
             const p = item.trueProbB;
             const q = 1 - p;
             const b = App.helpers.americanToDecimal(item.line.marketOdds.oddsB) - 1;
@@ -394,6 +379,8 @@ export const Dashboard = {
         const kellyMultiplier = parseFloat(App.elements.globalKellyMultiplierInput.value);
         const {side, stake, odds, edge} = this.getBestBet(item, bankroll, kellyMultiplier);
 
+        if (stake <= 0) return;
+
         const betData = {
             teamA: item.teamA,
             teamB: item.teamB,
@@ -406,6 +393,11 @@ export const Dashboard = {
         };
         
         Tracker.addBet(betData);
+
+        trackButton.textContent = "Tracked";
+        trackButton.classList.remove('btn-primary');
+        trackButton.classList.add('bg-green-600');
+        trackButton.disabled = true;
     },
 
     handleCardClick(card) {
