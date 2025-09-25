@@ -27,16 +27,8 @@ export const Tracker = {
         });
     }
 
-    const downloadBtn = document.createElement('button');
-    downloadBtn.textContent = 'Download Bets (CSV)';
-    downloadBtn.className = 'btn btn-secondary btn-sm ml-2';
-    downloadBtn.addEventListener('click', () => this.downloadBets());
-    
-    const refreshBtn = document.getElementById('refresh-tracker-btn');
-    if (refreshBtn) {
-        refreshBtn.insertAdjacentElement('afterend', downloadBtn);
-    }
-
+    // Create and set up the Download and Upload buttons
+    this.setupActionButtons();
 
     this.renderPerformanceTracker();
 
@@ -67,7 +59,77 @@ export const Tracker = {
         });
     }
   },
+
+  setupActionButtons() {
+    const refreshBtn = document.getElementById('refresh-tracker-btn');
+    if (!refreshBtn) return;
+
+    // Create Download Button
+    const downloadBtn = document.createElement('button');
+    downloadBtn.textContent = 'Download Bets (CSV)';
+    downloadBtn.className = 'btn btn-secondary btn-sm ml-2';
+    downloadBtn.addEventListener('click', () => this.downloadBets());
+    refreshBtn.insertAdjacentElement('afterend', downloadBtn);
+
+    // Create Upload Button
+    const uploadBtn = document.createElement('button');
+    uploadBtn.textContent = 'Upload Bets (CSV)';
+    uploadBtn.className = 'btn btn-secondary btn-sm ml-2';
+    
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.csv';
+    fileInput.style.display = 'none';
+
+    uploadBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+    
+    downloadBtn.insertAdjacentElement('afterend', uploadBtn);
+    downloadBtn.insertAdjacentElement('afterend', fileInput);
+  },
   
+  handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          const text = e.target.result;
+          const bets = this.parseCSV(text);
+          if (bets) {
+              this.state.loggedBets = bets;
+              localStorage.setItem("loggedBets", JSON.stringify(this.state.loggedBets));
+              this.renderPerformanceTracker();
+              alert('Bets uploaded successfully!');
+          } else {
+              alert('Failed to parse CSV. Please check the file format.');
+          }
+      };
+      reader.readAsText(file);
+      event.target.value = ''; // Reset file input
+  },
+
+  parseCSV(text) {
+      try {
+        const lines = text.trim().split('\n');
+        const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        const bets = lines.slice(1).map(line => {
+            const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+            let betObject = {};
+            header.forEach((key, index) => {
+                const value = values[index];
+                // Convert numeric strings to numbers
+                betObject[key] = !isNaN(parseFloat(value)) && isFinite(value) ? parseFloat(value) : value;
+            });
+            return betObject;
+        });
+        return bets;
+      } catch (error) {
+          console.error("CSV Parsing Error:", error);
+          return null;
+      }
+  },
+
   addBet(betData) {
       const newBet = {
           id: Date.now(),
@@ -230,4 +292,3 @@ export const Tracker = {
     document.body.removeChild(link);
   }
 };
-
