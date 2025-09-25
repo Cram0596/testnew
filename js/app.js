@@ -10,8 +10,8 @@ export const App = {
   config: {
     // Airtable Details
     airtableApiKey:
-      "patyGcwOjR1vg1cRQ.034c6e3c10bdd976e2c68938769dc42aa95244fa200096d83145e57f209876d3", // Found in your Airtable account page
-    airtableBaseId: "appUo5sd4zfRhSaeX", // Found in the API docs for your base
+      "YOUR_AIRTABLE_KEY_HERE", // Found in your Airtable account page
+    airtableBaseId: "Your_airtableAPI", // Found in the API docs for your base
     airtableTableName: "Syndicate Results", // The name of your table (e.g., "Bets")
   },
   elements: {
