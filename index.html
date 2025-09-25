@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Capital Edge</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f4f4f5;
+        --bg-tertiary: #e4e4e7;
+        --text-primary: #000000;
+        --text-secondary: #3f3f46;
+        --border-primary: #d4d4d8;
+        --accent-red: #dc2626;
+        --accent-blue: #2563eb;
+      }
+      html[data-theme="dark"] {
+        --bg-primary: #000000;
+        --bg-secondary: #18181b;
+        --bg-tertiary: #27272a;
+        --text-primary: #ffffff;
+        --text-secondary: #a1a1aa;
+        --border-primary: #3f3f46;
+        --accent-red: #ef4444;
+        --accent-blue: #3b82f6;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: var(--bg-primary);
+        color: var(--text-secondary);
+      }
+      .main-container {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+      }
+      .text-main-primary {
+        color: var(--text-primary);
+      }
+      .text-main-secondary {
+        color: var(--text-secondary);
+      }
+      .text-accent-red {
+        color: var(--accent-red);
+      }
+      .text-accent-blue {
+        color: var(--accent-blue);
+      }
+      .input-group input,
+      .input-group select,
+      .input-group textarea {
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-color: var(--border-primary);
+        @apply w-full rounded-md p-2 placeholder-slate-500 focus:outline-none focus:ring-2 transition;
+      }
+      .game-card {
+        background-color: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out,
+          border-color 0.2s ease-in-out;
+      }
+      .watchlist-star.active svg {
+        fill: #facc15;
+        color: #facc15;
+      }
+      .btn {
+        @apply px-4 py-2 rounded-md font-semibold text-white transition;
+      }
+      .btn-sm {
+        @apply px-2 py-1 text-xs;
+      }
+      .btn-primary {
+        background-color: var(--accent-red);
+      }
+      .btn-primary:hover {
+        filter: brightness(1.1);
+      }
+      .btn-secondary {
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-primary);
+      }
+      .btn-secondary:hover {
+        filter: brightness(0.9);
+      }
+      .btn-success {
+        @apply bg-green-600 hover:bg-green-700;
+      }
+      .btn-danger {
+        @apply bg-red-600 hover:bg-red-700;
+      }
+
+      .odds-table tbody tr:nth-child(even) {
+        background-color: var(--bg-primary);
+      }
+      .sortable-header {
+        cursor: pointer;
+        user-select: none;
+      }
+      .sortable-header:hover {
+        color: var(--text-primary);
+      }
+      .tooltip-container {
+        position: relative;
+        display: inline-block;
+      }
+      .tooltip-text {
+        visibility: hidden;
+        width: 200px;
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px;
+        position: absolute;
+        z-index: 10;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        border: 1px solid var(--border-primary);
+        font-size: 0.8rem;
+        font-weight: normal;
+      }
+      .tooltip-container:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+      @keyframes card-fade-in {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .card-fade-in {
+        animation: card-fade-in 0.5s ease-out forwards;
+      }
+      .game-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--accent-blue);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+      .pill-selector {
+        display: flex;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--border-primary);
+        width: fit-content;
+        margin: 8px auto 0;
+      }
+      .spread-pill {
+        padding: 6px 12px;
+        cursor: pointer;
+        background-color: var(--bg-tertiary);
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.2s, color 0.2s;
+        border-right: 1px solid var(--border-primary);
+      }
+      .spread-pill:last-child {
+        border-right: none;
+      }
+      .spread-pill.active {
+        background-color: var(--accent-red);
+        color: white;
+      }
+      .input-group-btn {
+        background-color: var(--bg-tertiary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-primary);
+        @apply w-full rounded-md p-2 placeholder-slate-500 focus:outline-none focus:ring-2 transition;
+      }
+      .market-filter-option {
+        @apply block w-full px-4 py-2 text-left text-sm text-main-primary hover:bg-main-secondary;
+      }
+      .best-odds-highlight {
+        background-color: rgba(34, 197, 94, 0.15); /* Greenish highlight */
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body class="p-4 md:p-8">
+    <div class="w-full">
+      <div
+        id="main-app-container"
+        class="main-container backdrop-blur-sm p-4 md:p-8 rounded-2xl shadow-2xl"
+      >
+        <div class="flex justify-between items-center mb-6">
+          <div class="flex items-center">
+            <svg
+              width="60"
+              height="60"
+              viewBox="0 0 104 90"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M26 0L0 45L26 90H78L104 45L78 0H26Z" fill="#263959" />
+              <path d="M78 0L52 45L78 90H26L52 45L26 0H78Z" fill="#E53B3A" />
+            </svg>
+            <div class="ml-4 text-left">
+              <h1
+                class="text-2xl md:text-3xl font-bold text-main-primary tracking-wider"
+              >
+                NOVA
+              </h1>
+              <p class="text-xs md:text-sm text-main-secondary tracking-widest">
+                SPORTS CAPITAL
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button
+              id="settings-btn"
+              class="p-2 rounded-full focus:outline-none"
+            >
+              <svg
+                class="h-6 w-6 text-main-secondary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                ></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                ></path>
+              </svg>
+            </button>
+            <button
+              id="theme-toggle"
+              class="p-2 rounded-full focus:outline-none"
+            >
+              <svg
+                id="theme-icon-sun"
+                class="h-6 w-6 text-main-secondary hidden"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                ></path>
+              </svg>
+              <svg
+                id="theme-icon-moon"
+                class="h-6 w-6 text-main-secondary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="border-b border-border-primary mb-6">
+          <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <button
+              id="tab-dashboard"
+              class="tab-btn border-accent-red text-accent-red whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+              data-view="dashboard-view"
+            >
+              Dashboard
+            </button>
+            <button
+              id="tab-ev-bets"
+              class="tab-btn border-transparent text-main-secondary hover:text-main-primary hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+              data-view="ev-bets-view"
+            >
+              +EV Bets
+            </button>
+            <button
+              id="tab-odds-screen"
+              class="tab-btn border-transparent text-main-secondary hover:text-main-primary hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+              data-view="odds-screen-view"
+            >
+              Odds Screen
+            </button>
+            <button
+              id="tab-tracker"
+              class="tab-btn border-transparent text-main-secondary hover:text-main-primary hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+              data-view="tracker-view"
+            >
+              My Tracker
+            </button>
+            <button
+              id="tab-system"
+              class="tab-btn border-transparent text-main-secondary hover:text-main-primary hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+              data-view="system-tracker-view"
+            >
+              System Performance
+            </button>
+          </nav>
+        </div>
+
+        <div id="main-views-container">
+          <div id="dashboard-view" class="view">
+            <div
+              class="flex flex-col md:flex-row justify-between items-start mb-8 gap-4"
+            >
+              <div class="flex-1">
+                <h2 class="text-2xl font-bold text-main-primary">
+                  The Capital Edge
+                </h2>
+              </div>
+              <div
+                class="flex flex-wrap items-end gap-4 p-4 border border-border-primary rounded-lg bg-tertiary"
+              >
+                <div class="input-group">
+                  <label
+                    for="global-bankroll"
+                    class="block text-sm font-medium mb-1 text-main-secondary"
+                    >Bankroll ($)</label
+                  ><input
+                    type="number"
+                    id="global-bankroll"
+                    value="1000"
+                    class="w-28"
+                  />
+                </div>
+                <div id="market-filter-custom" class="relative">
+                  <button
+                    type="button"
+                    id="market-filter-button"
+                    class="input-group-btn flex justify-between items-center w-40 text-left"
+                  >
+                    <span id="market-filter-selected-text">Moneyline</span>
+                    <svg
+                      class="h-5 w-5 text-main-secondary"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                  <div
+                    id="market-filter-options"
+                    class="absolute z-10 mt-1 w-40 bg-tertiary border border-border-primary rounded-md shadow-lg hidden"
+                  ></div>
+                </div>
+                <div class="input-group">
+                  <div class="tooltip-container">
+                    <label
+                      for="global-kelly-multiplier"
+                      class="block text-sm font-medium mb-1 text-main-secondary"
+                      >Kelly Multiplier</label
+                    >
+                    <span class="tooltip-text"
+                      >Fraction of the Kelly Criterion for sizing. 1.0 is full
+                      Kelly, 0.5 is half Kelly.</span
+                    >
+                  </div>
+                  <input
+                    type="number"
+                    id="global-kelly-multiplier"
+                    value="1.0"
+                    step="0.1"
+                    class="w-28"
+                  />
+                </div>
+                <div class="input-group">
+                  <label
+                    for="sport-filter"
+                    class="text-main-secondary font-medium mb-1 block"
+                    >Sport</label
+                  ><select id="sport-filter"></select>
+                </div>
+                <div class="input-group">
+                  <label
+                    for="sort-by"
+                    class="text-main-secondary font-medium mb-1 block"
+                    >Sort By</label
+                  ><select id="sort-by">
+                    <option value="time">Game Time</option>
+                    <option value="edge">Highest Edge</option>
+                  </select>
+                </div>
+                <div class="flex items-center pt-2 self-center">
+                  <button
+                    id="watchlist-filter-btn"
+                    class="watchlist-star p-2 rounded-full"
+                    title="Show Starred Only"
+                  >
+                    <svg
+                      class="h-6 w-6 text-main-secondary"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.975-2.888a1 1 0 00-1.176 0l-3.975 2.888c-.784.57-1.838-.196-1.539-1.118l1.518-4.674a1 1 0 00-.364-1.118L2.48 9.4c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.95-.69l1.519-4.674z"
+                      ></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div
+              id="game-slate"
+              class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+            ></div>
+            <div
+              id="loading-spinner"
+              class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 col-span-full hidden"
+            >
+              <div class="bg-tertiary p-4 rounded-lg animate-pulse">
+                <div class="flex justify-between items-start">
+                  <div class="space-y-3">
+                    <div class="h-6 w-48 bg-main-secondary/30 rounded"></div>
+                    <div class="h-6 w-40 bg-main-secondary/30 rounded"></div>
+                  </div>
+                  <div class="h-4 w-12 bg-main-secondary/30 rounded"></div>
+                </div>
+                <div class="mt-4 space-y-2">
+                  <div class="h-10 w-full bg-main-secondary/30 rounded"></div>
+                  <div class="h-10 w-full bg-main-secondary/30 rounded"></div>
+                </div>
+              </div>
+              <div class="bg-tertiary p-4 rounded-lg animate-pulse">
+                <div class="flex justify-between items-start">
+                  <div class="space-y-3">
+                    <div class="h-6 w-48 bg-main-secondary/30 rounded"></div>
+                    <div class="h-6 w-40 bg-main-secondary/30 rounded"></div>
+                  </div>
+                  <div class="h-4 w-12 bg-main-secondary/30 rounded"></div>
+                </div>
+                <div class="mt-4 space-y-2">
+                  <div class="h-10 w-full bg-main-secondary/30 rounded"></div>
+                  <div class="h-10 w-full bg-main-secondary/30 rounded"></div>
+                </div>
+              </div>
+              <div class="bg-tertiary p-4 rounded-lg animate-pulse">
+                <div class="flex justify-between items-start">
+                  <div class="space-y-3">
+                    <div class="h-6 w-48 bg-main-secondary/30 rounded"></div>
+                    <div class="h-6 w-40 bg-main-secondary/30 rounded"></div>
+                  </div>
+                  <div class="h-4 w-12 bg-main-secondary/30 rounded"></div>
+                </div>
+                <div class="mt-4 space-y-2">
+                  <div class="h-10 w-full bg-main-secondary/30 rounded"></div>
+                  <div class="h-10 w-full bg-main-secondary/30 rounded"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="ev-bets-view" class="view hidden">
+            <h2 class="text-2xl font-bold text-main-primary mb-8">
+              EV Bets Finder
+            </h2>
+            <div
+              class="flex flex-wrap items-end gap-4 p-4 mb-6 border border-border-primary rounded-lg bg-tertiary"
+            >
+              <div class="input-group">
+                <label
+                  for="member-selector"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Member</label
+                >
+                <select id="member-selector">
+                  <option>QuantSage</option>
+                  <option>The Guru</option>
+                  <option>Degen Gambler</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label
+                  for="ev-bankroll"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Bankroll ($)</label
+                ><input
+                  type="number"
+                  id="ev-bankroll"
+                  value="1000"
+                  class="w-28"
+                />
+              </div>
+              <div class="input-group">
+                <label
+                  for="ev-kelly-multiplier"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Kelly Multiplier</label
+                ><input
+                  type="number"
+                  id="ev-kelly-multiplier"
+                  value="0.5"
+                  step="0.1"
+                  class="w-28"
+                />
+              </div>
+              <div class="input-group">
+                <label
+                  for="ev-search-filter"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Search Player/Team</label
+                ><input
+                  type="text"
+                  id="ev-search-filter"
+                  placeholder="e.g., Yankees, Lebron..."
+                  class="w-40"
+                />
+              </div>
+              <div class="input-group">
+                <label
+                  for="ev-min-ev-filter"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Min EV (%)</label
+                ><input
+                  type="number"
+                  id="ev-min-ev-filter"
+                  value="0"
+                  step="0.1"
+                  class="w-24"
+                />
+              </div>
+              <div class="input-group">
+                <label
+                  for="ev-max-ev-filter"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Max EV (%)</label
+                ><input
+                  type="number"
+                  id="ev-max-ev-filter"
+                  placeholder="No Max"
+                  class="w-24"
+                />
+              </div>
+              <div class="input-group">
+                <label
+                  for="ev-book-filter"
+                  class="text-main-secondary font-medium mb-1 block"
+                  >Sportsbook</label
+                ><select id="ev-book-filter">
+                  <option value="all">All Books</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label
+                  for="ev-market-filter"
+                  class="text-main-secondary font-medium mb-1 block"
+                  >Bet Type</label
+                ><select id="ev-market-filter">
+                  <option value="all">All Markets</option>
+                </select>
+              </div>
+            </div>
+            <div
+              id="ev-bets-slate"
+              class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+            ></div>
+          </div>
+
+          <div id="tracker-view" class="view hidden">
+            <h2 class="text-2xl font-bold text-main-primary text-center mb-4">
+              My Performance Tracker
+            </h2>
+            <div
+              class="result-card grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-6"
+            >
+              <div>
+                <h4 class="text-lg font-semibold text-main-secondary">
+                  Record
+                </h4>
+                <p
+                  id="tracker-record"
+                  class="text-2xl font-bold text-main-primary"
+                >
+                  0 - 0
+                </p>
+              </div>
+              <div>
+                <h4 class="text-lg font-semibold text-main-secondary">
+                  Profit/Loss
+                </h4>
+                <p id="tracker-pl" class="text-2xl font-bold text-main-primary">
+                  $0.00
+                </p>
+              </div>
+              <div>
+                <h4 class="text-lg font-semibold text-main-secondary">ROI</h4>
+                <p
+                  id="tracker-roi"
+                  class="text-2xl font-bold text-main-primary"
+                >
+                  0.00%
+                </p>
+              </div>
+            </div>
+            <div id="tracked-plays-list" class="space-y-4"></div>
+          </div>
+
+          <div id="system-tracker-view" class="view hidden">
+            <h2 class="text-2xl font-bold text-main-primary text-center mb-4">
+              System Performance
+            </h2>
+            <div class="flex justify-center items-end gap-4 mb-6">
+              <div class="input-group">
+                <label
+                  for="system-sport-filter"
+                  class="text-main-secondary font-medium mb-1 block"
+                  >Sport:</label
+                ><select id="system-sport-filter">
+                  <option value="all">All Sports</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label
+                  for="system-market-filter"
+                  class="text-main-secondary font-medium mb-1 block"
+                  >Market:</label
+                ><select id="system-market-filter">
+                  <option value="all">All Markets</option>
+                  <option value="moneyline">Moneyline</option>
+                  <option value="spreads">Spreads</option>
+                  <option value="totals">Totals</option>
+                </select>
+              </div>
+              <button id="simulate-results-btn" class="btn btn-primary">
+                Simulate Results
+              </button>
+            </div>
+            <div
+              class="result-card grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-6"
+            >
+              <div>
+                <h4 class="text-lg font-semibold text-main-secondary">
+                  Record
+                </h4>
+                <p
+                  id="system-tracker-record"
+                  class="text-2xl font-bold text-main-primary"
+                >
+                  0 - 0
+                </p>
+              </div>
+              <div>
+                <h4 class="text-lg font-semibold text-main-secondary">
+                  Profit/Loss
+                </h4>
+                <p
+                  id="system-tracker-pl"
+                  class="text-2xl font-bold text-main-primary"
+                >
+                  $0.00
+                </p>
+              </div>
+              <div>
+                <h4 class="text-lg font-semibold text-main-secondary">ROI</h4>
+                <p
+                  id="system-tracker-roi"
+                  class="text-2xl font-bold text-main-primary"
+                >
+                  0.00%
+                </p>
+              </div>
+            </div>
+            <div id="system-tracked-plays-list" class="space-y-4"></div>
+          </div>
+
+          <div id="odds-screen-view" class="view hidden">
+            <div class="flex justify-between items-center mb-6">
+              <div class="flex items-center">
+                <button
+                  id="odds-screen-back-btn"
+                  class="btn btn-secondary mr-4"
+                >
+                  &larr; Back
+                </button>
+                <h2
+                  id="odds-screen-title"
+                  class="text-xl md:text-2xl font-bold text-main-primary"
+                ></h2>
+              </div>
+              <div class="flex items-center space-x-3">
+                <span class="text-sm font-medium text-main-secondary"
+                  >Show Vig-Free</span
+                >
+                <label for="vig-free-toggle" class="toggle-switch"
+                  ><input
+                    type="checkbox"
+                    id="vig-free-toggle"
+                    class="sr-only peer" />
+                  <div class="toggle-track"></div
+                ></label>
+              </div>
+            </div>
+            <p
+              id="odds-screen-subtitle"
+              class="text-main-secondary -mt-4 mb-6"
+            ></p>
+            <div id="best-line-summary" class="mb-6"></div>
+            <div id="odds-comparison-container" class="space-y-6"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="log-play-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="text-center mb-4">
+          <h3
+            id="modal-title"
+            class="text-lg leading-6 font-medium text-main-primary"
+          >
+            Track Your Play
+          </h3>
+          <p id="modal-game-info" class="text-sm text-main-secondary"></p>
+        </div>
+        <div class="space-y-4">
+          <div class="input-group">
+            <label
+              for="modal-selection"
+              class="block text-sm font-medium text-main-secondary"
+              >Selection</label
+            ><select id="modal-selection"></select>
+          </div>
+          <div class="input-group">
+            <label
+              for="modal-odds"
+              class="block text-sm font-medium text-main-secondary"
+              >Odds</label
+            ><input type="number" id="modal-odds" class="w-full" />
+          </div>
+          <div class="input-group">
+            <label
+              for="modal-stake"
+              class="block text-sm font-medium text-main-secondary"
+              >Stake ($)</label
+            ><input type="number" id="modal-stake" class="w-full" />
+          </div>
+        </div>
+        <div class="mt-6 flex justify-end space-x-4">
+          <button id="modal-cancel-btn" type="button" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button id="modal-save-btn" type="button" class="btn btn-primary">
+            Track Play
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="odds-modal"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm hidden"
+    >
+      <div class="bg-secondary p-6 rounded-lg shadow-xl w-full max-w-3xl">
+        <div class="flex justify-between items-center mb-4">
+          <div class="text-left">
+            <h3
+              id="odds-modal-title"
+              class="text-lg leading-6 font-medium text-main-primary"
+            ></h3>
+            <p id="odds-modal-subtitle" class="text-sm text-main-secondary"></p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <span class="text-sm font-medium text-main-secondary"
+              >Show Vig-Free</span
+            >
+            <label
+              for="modal-vig-free-toggle"
+              class="relative inline-block w-10 h-6"
+            >
+              <input
+                type="checkbox"
+                id="modal-vig-free-toggle"
+                class="sr-only peer"
+              />
+              <div
+                class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-tertiary border border-border-primary rounded-full transition-colors peer-checked:bg-accent-red peer-checked:border-accent-red"
+              ></div>
+              <div
+                class="absolute cursor-pointer top-1 left-1 bg-text-secondary w-4 h-4 rounded-full transition-transform peer-checked:translate-x-4 peer-checked:bg-white"
+              ></div>
+            </label>
+          </div>
+        </div>
+
+        <div
+          id="odds-modal-table-container"
+          class="mt-4 max-h-[60vh] overflow-y-auto"
+        ></div>
+
+        <div class="mt-6 flex justify-end">
+          <button
+            id="odds-modal-close-btn"
+            type="button"
+            class="btn btn-secondary"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <h3 class="text-lg leading-6 font-medium text-main-primary mb-4">
+          Settings
+        </h3>
+        <div class="input-group">
+          <label
+            for="bookmaker-order-input"
+            class="block text-sm font-medium text-main-secondary mb-2"
+            >Custom Sportsbook Order</label
+          >
+          <textarea
+            id="bookmaker-order-input"
+            rows="5"
+            class="w-full"
+            placeholder="Enter bookmaker keys, separated by commas...&#10;e.g., pinnacle, fanduel, draftkings"
+          ></textarea>
+          <p class="text-xs text-main-secondary mt-1">
+            Bookmakers not on this list will be added alphabetically at the end.
+          </p>
+        </div>
+        <div class="mt-6 flex justify-end space-x-4">
+          <button
+            id="settings-cancel-btn"
+            type="button"
+            class="btn btn-secondary"
+          >
+            Cancel
+          </button>
+          <button id="settings-save-btn" type="button" class="btn btn-primary">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <template id="tracked-play-card-template">
+      <div
+        class="tracked-play-card bg-tertiary p-4 rounded-lg border border-border-primary"
+      >
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="font-bold text-main-primary"></p>
+            <p class="text-sm text-main-secondary"></p>
+          </div>
+          <div class="status-container text-right space-x-2"></div>
+        </div>
+        <div class="mt-2 text-sm">
+          <p>Play: <span class="font-semibold play-details"></span></p>
+          <p>Edge: <span class="font-semibold edge-details"></span></p>
+        </div>
+      </div>
+    </template>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

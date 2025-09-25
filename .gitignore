@@ -1,0 +1,9 @@
+# Dependency directories
+node_modules/
+
+# Data files
+games.json
+player_props.json
+
+# Environment files (if you ever add one)
+.env
