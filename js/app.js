@@ -1,3 +1,5 @@
+// js/app.js
+
 import { Dashboard } from "./dashboard.js";
 import { EVBets } from "./ev_bets.js";
 import { Tracker } from "./tracker.js";
@@ -8,11 +10,7 @@ import { TEAM_LOGO_MAP } from "./mappings.js";
 
 export const App = {
   config: {
-    // Airtable Details
-    airtableApiKey:
-      "YOUR_AIRTABLE_KEY_HERE", // Found in your Airtable account page
-    airtableBaseId: "Your_airtableAPI", // Found in the API docs for your base
-    airtableTableName: "Syndicate Results", // The name of your table (e.g., "Bets")
+    // Airtable Details Removed
   },
   elements: {
     themeToggle: document.getElementById("theme-toggle"),
@@ -117,10 +115,10 @@ export const App = {
     },
     LEAGUE_FOLDER_MAP: {
       NFL: "nfl",
-      "NFL Football": "nfl", // Add likely variation
-      americanfootball_nfl: "nfl", // Add API key as a fallback
+      "NFL Football": "nfl", 
+      americanfootball_nfl: "nfl", 
       "NCAAF Football": "ncaaf",
-      americanfootball_ncaaf: "ncaaf", // Add API key as a fallback
+      americanfootball_ncaaf: "ncaaf",
       NCAAB: "ncaab",
       MLB: "mlb",
       WNBA: "wnba",
