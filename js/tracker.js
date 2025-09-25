@@ -17,9 +17,19 @@ export const Tracker = {
         this.state.initialBankroll = parseFloat(savedBankroll);
     }
     
+    const initialBankrollInput = document.getElementById('initial-bankroll-input');
+    if (initialBankrollInput) {
+        initialBankrollInput.value = this.state.initialBankroll;
+        initialBankrollInput.addEventListener('change', () => {
+            this.state.initialBankroll = parseFloat(initialBankrollInput.value) || 0;
+            localStorage.setItem('initialBankroll', this.state.initialBankroll);
+            this.renderPerformanceTracker();
+        });
+    }
+
     const downloadBtn = document.createElement('button');
     downloadBtn.textContent = 'Download Bets (CSV)';
-    downloadBtn.className = 'btn btn-secondary btn-sm';
+    downloadBtn.className = 'btn btn-secondary btn-sm ml-2';
     downloadBtn.addEventListener('click', () => this.downloadBets());
     
     const refreshBtn = document.getElementById('refresh-tracker-btn');
@@ -108,11 +118,6 @@ export const Tracker = {
     if (sortedBets.length === 0) {
       listElement.innerHTML =
         '<p class="text-center text-main-secondary">No bets tracked yet.</p>';
-      recordEl.textContent = "0 - 0";
-      plEl.textContent = "$0.00";
-      plEl.className = "text-2xl font-bold text-main-primary";
-      roiEl.textContent = "0.00%";
-      return;
     }
 
     sortedBets.forEach((bet) => {
@@ -198,7 +203,11 @@ export const Tracker = {
     
     if (totalBankrollEl) totalBankrollEl.textContent = `$${totalBankroll.toFixed(2)}`;
     if (inPlayEl) inPlayEl.textContent = `$${inPlay.toFixed(2)}`;
-    if (availableEl) availableEl.textContent = `$${this.state.availableBankroll.toFixed(2)}`;
+    if (availableEl) {
+        availableEl.textContent = `$${this.state.availableBankroll.toFixed(2)}`;
+        availableEl.classList.toggle('text-green-500', this.state.availableBankroll >= 0);
+        availableEl.classList.toggle('text-red-500', this.state.availableBankroll < 0);
+    }
 
   },
   
@@ -221,3 +230,4 @@ export const Tracker = {
     document.body.removeChild(link);
   }
 };
+
