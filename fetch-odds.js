@@ -411,6 +411,36 @@ function calculateConsensusLine(oddsArray, removeVig = false) {
     oddsB: probToAmerican(consensusProbB),
   };
 }
+function calculateConsensus(overPool, underPool, removeVig) {
+  if (overPool.length === 0 || underPool.length === 0) return null;
+
+  let weightedOverProb = 0, totalOverWeight = 0;
+  overPool.forEach(item => {
+      weightedOverProb += americanToImplied(item.odds) * item.weight;
+      totalOverWeight += item.weight;
+  });
+  const avgOverProb = totalOverWeight > 0 ? weightedOverProb / totalOverWeight : 0;
+
+  let weightedUnderProb = 0, totalUnderWeight = 0;
+  underPool.forEach(item => {
+      weightedUnderProb += americanToImplied(item.odds) * item.weight;
+      totalUnderWeight += item.weight;
+  });
+  const avgUnderProb = totalUnderWeight > 0 ? weightedUnderProb / totalUnderWeight : 0;
+
+  let finalOverProb = avgOverProb;
+  if (removeVig) {
+      const totalProb = avgOverProb + avgUnderProb;
+      if (totalProb > 1) { // Only remove vig if total probability is over 100%
+          finalOverProb = avgOverProb / totalProb;
+      }
+  }
+
+  return {
+      over: probToAmerican(finalOverProb),
+      under: probToAmerican(1 - finalOverProb)
+  };
+}
 
 function processAllData(allGames) {
   const processedGameLines = [];
