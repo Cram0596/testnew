@@ -48,10 +48,11 @@ export const Tracker = {
 
   setupActionButtons() {
     const refreshBtn = document.getElementById('refresh-tracker-btn');
-    if (!refreshBtn || document.getElementById('tracker-button-container')) return;
+    // **FIXED**: Prevent creating buttons if they already exist
+    if (!refreshBtn || document.getElementById('tracker-button-container')) return; 
 
     const buttonContainer = document.createElement('div');
-    buttonContainer.id = 'tracker-button-container';
+    buttonContainer.id = 'tracker-button-container'; // Add ID to prevent duplicates
     buttonContainer.className = "flex space-x-2 ml-2";
 
     const downloadBtn = document.createElement('button');
@@ -72,6 +73,7 @@ export const Tracker = {
     buttonContainer.appendChild(uploadBtn);
     buttonContainer.appendChild(fileInput);
 
+    // **FIXED**: Append the container to the same parent as the refresh button
     refreshBtn.parentElement.appendChild(buttonContainer);
   },
 
@@ -84,10 +86,13 @@ export const Tracker = {
           const text = e.target.result;
           const bets = this.parseCSV(text);
           if (bets) {
-              this.state.loggedBets = this.state.loggedBets.concat(bets);
+              const existingIds = new Set(this.state.loggedBets.map(b => b.id));
+              const newBets = bets.filter(b => !existingIds.has(b.id));
+              this.state.loggedBets = this.state.loggedBets.concat(newBets);
+              
               localStorage.setItem("loggedBets", JSON.stringify(this.state.loggedBets));
               this.renderPerformanceTracker();
-              alert('Bets uploaded successfully!');
+              alert(`${newBets.length} new bets uploaded successfully!`);
           } else {
               alert('Failed to parse CSV. Please check the file format.');
           }
@@ -101,7 +106,7 @@ export const Tracker = {
         const lines = text.trim().split('\n');
         const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
         const bets = lines.slice(1).map(line => {
-            const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+            const values = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g).map(v => v.trim().replace(/"/g, ''));
             let betObject = {};
             header.forEach((key, index) => {
                 const value = values[index];
@@ -154,18 +159,12 @@ export const Tracker = {
   _renderTrackerUI(listElement, bets, recordEl, plEl, roiEl) {
     if (!listElement || !recordEl || !plEl || !roiEl) return;
     listElement.innerHTML = "";
-    let wins = 0,
-      losses = 0,
-      pushes = 0,
-      totalWagered = 0,
-      totalProfit = 0,
-      inPlay = 0;
+    let wins = 0, losses = 0, pushes = 0, totalWagered = 0, totalProfit = 0, inPlay = 0;
 
     const sortedBets = [...bets].sort((a, b) => b.id - a.id);
 
     if (sortedBets.length === 0) {
-      listElement.innerHTML =
-        '<p class="text-center text-main-secondary">No bets tracked yet.</p>';
+      listElement.innerHTML = '<p class="text-center text-main-secondary">No bets tracked yet.</p>';
     }
 
     sortedBets.forEach((bet) => {
@@ -183,14 +182,9 @@ export const Tracker = {
       const statusContainer = cardRoot.querySelector(".status-container");
 
       if (teamInfoEl) teamInfoEl.textContent = `${bet.teamB} @ ${bet.teamA}`;
-      if (dateInfoEl && bet.timestamp)
-        dateInfoEl.textContent = new Date(bet.timestamp).toLocaleString();
-      if (playDetailsEl)
-        playDetailsEl.textContent = `$${parseFloat(bet.stake).toFixed(2)} on ${
-          bet.sideName
-        } at ${App.helpers.formatOdds(bet.odds)}`;
-      if (edgeDetailsEl && !isNaN(bet.edge))
-        edgeDetailsEl.textContent = `${parseFloat(bet.edge).toFixed(2)}%`;
+      if (dateInfoEl && bet.timestamp) dateInfoEl.textContent = new Date(bet.timestamp).toLocaleString();
+      if (playDetailsEl) playDetailsEl.textContent = `$${parseFloat(bet.stake).toFixed(2)} on ${bet.sideName} at ${App.helpers.formatOdds(bet.odds)}`;
+      if (edgeDetailsEl && !isNaN(bet.edge)) edgeDetailsEl.textContent = `${parseFloat(bet.edge).toFixed(2)}% EV`;
 
       if (statusContainer) {
         if (bet.status === "pending") {
@@ -214,8 +208,7 @@ export const Tracker = {
         totalWagered += parseFloat(bet.stake);
         if (bet.status === "win") {
           wins++;
-          totalProfit +=
-            parseFloat(bet.stake) * (App.helpers.americanToDecimal(bet.odds) - 1);
+          totalProfit += parseFloat(bet.stake) * (App.helpers.americanToDecimal(bet.odds) - 1);
         } else if (bet.status === "loss") {
           losses++;
           totalProfit -= parseFloat(bet.stake);
@@ -226,29 +219,19 @@ export const Tracker = {
       listElement.appendChild(cardContent);
     });
 
-    recordEl.textContent = `${wins} - ${losses}${
-      pushes > 0 ? ` - ${pushes}` : ""
-    }`;
-    plEl.textContent = `${totalProfit >= 0 ? "+" : ""}$${totalProfit.toFixed(
-      2
-    )}`;
-    plEl.className = `text-2xl font-bold ${
-      totalProfit > 0
-        ? "text-green-500"
-        : totalProfit < 0
-        ? "text-red-500"
-        : "text-main-primary"
-    }`;
+    recordEl.textContent = `${wins} - ${losses}${pushes > 0 ? ` - ${pushes}` : ""}`;
+    plEl.textContent = `${totalProfit >= 0 ? "+" : ""}$${totalProfit.toFixed(2)}`;
+    plEl.className = `text-2xl font-bold ${totalProfit > 0 ? "text-green-500" : totalProfit < 0 ? "text-red-500" : "text-main-primary"}`;
     const roi = totalWagered > 0 ? (totalProfit / totalWagered) * 100 : 0;
     roiEl.textContent = `${roi.toFixed(2)}%`;
-
+    
     const totalBankroll = this.state.initialBankroll + totalProfit;
     this.state.availableBankroll = totalBankroll - inPlay;
-
+    
     const totalBankrollEl = document.getElementById('tracker-total-bankroll');
     const inPlayEl = document.getElementById('tracker-in-play');
     const availableEl = document.getElementById('tracker-available');
-
+    
     if (totalBankrollEl) totalBankrollEl.textContent = `$${totalBankroll.toFixed(2)}`;
     if (inPlayEl) inPlayEl.textContent = `$${inPlay.toFixed(2)}`;
     if (availableEl) {
@@ -266,8 +249,8 @@ export const Tracker = {
     }
     const header = Object.keys(bets[0]).join(',');
     const csvRows = bets.map(row => 
-        Object.values(row).map(value => 
-            `"${String(value).replace(/"/g, '""')}"`
+        Object.keys(row).map(fieldName => 
+            `"${String(row[fieldName]).replace(/"/g, '""')}"`
         ).join(',')
     );
     const csvContent = `data:text/csv;charset=utf-8,${header}\n${csvRows.join('\n')}`;
