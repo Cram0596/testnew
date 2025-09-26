@@ -28,10 +28,9 @@ export const App = {
     globalKellyMultiplierInput: document.getElementById(
       "global-kelly-multiplier"
     ),
-    evBetsSlate: document.getElementById("ev-bets-slate"),
-    oddsScreenView: document.getElementById("odds-screen-view"), // Added this missing element
-    dashboardView: document.getElementById("dashboard-view"), // Added for consistency
-    evBetsView: document.getElementById("ev-bets-view"), // Added for consistency
+    evBetsView: document.getElementById("ev-bets-view"),
+    oddsScreenView: document.getElementById("odds-screen-view"),
+    dashboardView: document.getElementById("dashboard-view"),
     trackerRecord: document.getElementById("tracker-record"),
     trackerPl: document.getElementById("tracker-pl"),
     trackerRoi: document.getElementById("tracker-roi"),
@@ -160,28 +159,32 @@ export const App = {
         }),
       ]);
       const now = new Date();
-      this.state.allGameData = (gameData.games || []).filter(
+      
+      // **FIXED**: Directly assign gameData since it's already an array
+      this.state.allGameData = (gameData || []).filter(
         (g) => new Date(g.gameTime) > now
       );
       this.state.allPropData = (propData.props || []).filter(
         (p) => new Date(p.gameTime) > now
       );
-
+      
       UI.init();
-      Dashboard.init(this.elements.dashboardView);
+      Dashboard.init();
       EVBets.init(this.elements.evBetsView);
       Tracker.init();
       System.init();
       OddsScreen.init(this.elements.oddsScreenView);
       console.log("NOVA Sports Capital Initialized");
+
     } catch (error) {
       console.error("Failed to load initial data:", error);
-      this.elements.gameSlate.innerHTML = `<p class="text-center text-red-500 col-span-full">${error.message}</p>`;
+      if (this.elements.gameSlate) {
+          this.elements.gameSlate.innerHTML = `<p class="text-center text-red-500 col-span-full">${error.message}</p>`;
+      }
     } finally {
       this.elements.loadingSpinner.classList.add("hidden");
     }
   },
 };
 
-// This is the corrected way to start the application
 document.addEventListener("DOMContentLoaded", () => App.init());
