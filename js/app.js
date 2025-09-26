@@ -62,6 +62,7 @@ export const App = {
     allPropData: [],
   },
   helpers: {
+    // All helper functions remain the same
     americanToProb(odds) {
       if (odds === null || typeof odds === "undefined") return 0;
       if (odds >= 100) return 100 / (odds + 100);
@@ -160,7 +161,6 @@ export const App = {
       ]);
       const now = new Date();
       
-      // **FIXED**: Access the 'games' array inside the gameData object
       this.state.allGameData = (gameData.games || []).filter(
         (g) => new Date(g.gameTime) > now
       );
@@ -168,6 +168,8 @@ export const App = {
         (p) => new Date(p.gameTime) > now
       );
       
+      // **FIXED**: All initializations are now INSIDE the try block.
+      // This ensures they only run if the data loads successfully.
       UI.init();
       Dashboard.init();
       EVBets.init(this.elements.evBetsView);
