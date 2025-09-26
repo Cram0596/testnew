@@ -2,7 +2,7 @@ const axios = require("axios");
 const fs = require("fs");
 
 // --- Configuration ---
-const ODDS_API_KEY = "7421b6a7d7b2c413ccb592182d5e2ca5";
+const ODDS_API_KEY = "ed63bd22ecf8ad019b69608e25b5c9c3";
 const REGIONS = "us,us2,eu,au,us_ex";
 const ODDS_FORMAT = "american";
 const REQUEST_DELAY = 1000;
