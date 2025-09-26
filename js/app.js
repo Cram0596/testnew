@@ -158,6 +158,7 @@ export const App = {
           return res.json();
         }),
       ]);
+
       const now = new Date();
       this.state.allGameData = (gameData.games || []).filter(
         (g) => new Date(g.gameTime) > now
@@ -165,12 +166,29 @@ export const App = {
       this.state.allPropData = (propData.props || []).filter(
         (p) => new Date(p.gameTime) > now
       );
+
+      // --- CORRECTED INITIALIZATION ---
+      UI.init();
+      // Pass the correct HTML elements to each module
+      Dashboard.init(this.elements.dashboardView);
+      EVBets.init(this.elements.evBetsView);
+      OddsScreen.init(this.elements.oddsScreenView);
+      // The original Tracker and System from testnew don't need arguments
+      Tracker.init();
+      System.init();
+
+      console.log("NOVA Sports Capital Initialized");
+
     } catch (error) {
       console.error("Failed to load initial data:", error);
-      this.elements.gameSlate.innerHTML = `<p class="text-center text-red-500 col-span-full">${error.message}</p>`;
+      if (this.elements.gameSlate) {
+          this.elements.gameSlate.innerHTML = `<p class="text-center text-red-500 col-span-full">${error.message}</p>`;
+      }
     } finally {
       this.elements.loadingSpinner.classList.add("hidden");
     }
+  },
+};
 
     UI.init();
     Dashboard.init();
@@ -179,7 +197,6 @@ export const App = {
     System.init();
     OddsScreen.init();
     console.log("NOVA Sports Capital Initialized");
-  },
-};
+  };
 
 App.init();
