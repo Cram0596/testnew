@@ -10,8 +10,6 @@ export const EVBets = {
 
   init(viewElement) {
     this.view = viewElement;
-    // The content is generated dynamically when the tab is clicked.
-    // We add a listener to the tab itself to trigger the loading.
     const evBetsTab = document.getElementById("tab-ev-bets");
     if (evBetsTab && !evBetsTab.hasAttribute('data-listener-added')) {
         evBetsTab.addEventListener("click", () => this.processAndDisplayEVBets());
@@ -20,7 +18,6 @@ export const EVBets = {
   },
 
   processAndDisplayEVBets() {
-    // Ensure the view is ready
     if (!this.view.querySelector('#ev-bets-slate')) {
         this.view.innerHTML = `
             <div id="ev-controls" class="flex flex-wrap items-end gap-4 p-4 border border-border-primary rounded-lg bg-tertiary mb-6">
@@ -90,13 +87,13 @@ export const EVBets = {
     const bookFilter = document.getElementById("ev-book-filter");
     const marketFilter = document.getElementById("ev-market-filter");
 
-    if (bookFilter && bookFilter.options.length <= 1) { // Only populate once
+    if (bookFilter && bookFilter.options.length <= 1) {
         const uniqueBooks = [...new Set(this.state.evBets.map(bet => bet.book.bookmaker))];
         uniqueBooks.sort().forEach(book => {
             bookFilter.add(new Option(book, book));
         });
     }
-    if (marketFilter && marketFilter.options.length <= 1) { // Only populate once
+    if (marketFilter && marketFilter.options.length <= 1) {
         const uniqueMarkets = [...new Set(this.state.evBets.map(bet => bet.marketKey))];
         uniqueMarkets.sort().forEach(market => {
             marketFilter.add(new Option(market.charAt(0).toUpperCase() + market.slice(1), market));
@@ -110,7 +107,6 @@ export const EVBets = {
 
     allData.forEach(item => {
         const isProp = !!item.propId;
-        // Simplified: just check the main markets for games
         const markets = isProp ? [item.market] : ['moneyline', 'spreads', 'totals'];
 
         markets.forEach(marketKey => {
