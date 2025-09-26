@@ -1,7 +1,7 @@
 // js/ev_bets.js
 
 import { App } from "./app.js";
-import { Tracker } from "./tracker.js";
+import { Tracker } from "./tracker.js"; // Import the local tracker
 
 export const EVBets = {
   state: {
@@ -10,29 +10,16 @@ export const EVBets = {
 
   init(viewElement) {
     this.view = viewElement;
+    // This logic ensures the content and listeners are ready when the tab is clicked
     const evBetsTab = document.getElementById("tab-ev-bets");
     if (evBetsTab && !evBetsTab.hasAttribute('data-listener-added')) {
         evBetsTab.addEventListener("click", () => this.processAndDisplayEVBets());
         evBetsTab.setAttribute('data-listener-added', 'true');
     }
   },
-
+  
   processAndDisplayEVBets() {
-    if (!this.view.querySelector('#ev-bets-slate')) {
-        this.view.innerHTML = `
-            <div id="ev-controls" class="flex flex-wrap items-end gap-4 p-4 border border-border-primary rounded-lg bg-tertiary mb-6">
-                 <div class="input-group"><label for="ev-bankroll" class="block text-sm font-medium mb-1 text-main-secondary">Bankroll ($)</label><input type="number" id="ev-bankroll" value="1000" class="w-28"></div>
-                 <div class="input-group"><label for="ev-kelly-multiplier" class="block text-sm font-medium mb-1 text-main-secondary">Kelly Multiplier</label><input type="number" id="ev-kelly-multiplier" value="0.5" step="0.1" class="w-28"></div>
-                 <div class="input-group"><label for="ev-book-filter" class="text-main-secondary font-medium mb-1 block">Bookmaker</label><select id="ev-book-filter"><option value="all">All Books</option></select></div>
-                 <div class="input-group"><label for="ev-market-filter" class="text-main-secondary font-medium mb-1 block">Market</label><select id="ev-market-filter"><option value="all">All Markets</option></select></div>
-                 <div class="input-group"><label for="ev-min-ev-filter" class="text-main-secondary font-medium mb-1 block">Min EV (%)</label><input type="number" id="ev-min-ev-filter" value="0" class="w-24"></div>
-                 <div class="input-group"><label for="ev-max-ev-filter" class="text-main-secondary font-medium mb-1 block">Max EV (%)</label><input type="number" id="ev-max-ev-filter" placeholder="No Max" class="w-24"></div>
-                 <div class="input-group flex-grow"><label for="ev-search-filter" class="text-main-secondary font-medium mb-1 block">Search</label><input type="text" id="ev-search-filter" placeholder="Team or Player Name..."></div>
-            </div>
-            <div id="ev-bets-slate" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
-        `;
-    }
-    this.state.evBets = this.calculateEVBets();
+    this.calculateEVBets();
     this._populateFilters();
     this.renderEVBets();
     this.addEventListeners();
@@ -40,133 +27,131 @@ export const EVBets = {
 
   addEventListeners() {
     const controls = [
-      "ev-bankroll", "ev-kelly-multiplier", "ev-book-filter", 
-      "ev-min-ev-filter", "ev-max-ev-filter", "ev-market-filter", "ev-search-filter"
+      "ev-bankroll", "ev-kelly-multiplier", "ev-book-filter", "ev-min-ev-filter",
+      "ev-max-ev-filter", "ev-market-filter", "ev-min-odds-filter", "ev-max-odds-filter", "ev-search-filter",
     ];
     controls.forEach((id) => {
       const el = document.getElementById(id);
       if (el) {
-        const eventType = el.tagName === 'INPUT' && el.type !== 'number' ? 'input' : 'change';
+        const eventType = el.tagName === "SELECT" ? "change" : "input";
         el.addEventListener(eventType, () => this.renderEVBets());
       }
     });
 
+    // Add a single, delegated event listener to the slate for all track buttons
     const slate = document.getElementById("ev-bets-slate");
     if (slate) {
-      slate.addEventListener("click", (e) => {
-        const trackBtn = e.target.closest(".btn-track-bet");
-        if (trackBtn) {
-            e.stopPropagation();
-            this.handleTrackButtonClick(trackBtn);
-        }
-      });
+        slate.addEventListener("click", (e) => {
+            const trackBtn = e.target.closest(".btn-track-bet");
+            if(trackBtn) {
+                e.stopPropagation();
+                this.handleTrackButtonClick(trackBtn);
+            }
+        });
     }
   },
 
   handleTrackButtonClick(btn) {
-    const betData = {
-      teamA: btn.dataset.teamA,
-      teamB: btn.dataset.teamB,
-      sideName: btn.dataset.bet,
-      odds: parseFloat(btn.dataset.odds),
-      edge: parseFloat(btn.dataset.ev),
-      stake: parseFloat(btn.dataset.stake),
-      status: "pending",
-      timestamp: new Date(btn.dataset.gameTime).getTime(),
-    };
-    
-    Tracker.addBet(betData);
+      // This function creates the bet object and sends it to your local tracker
+      const betData = {
+          teamA: btn.dataset.teamA,
+          teamB: btn.dataset.teamB,
+          sideName: btn.dataset.bet,
+          odds: parseFloat(btn.dataset.odds),
+          edge: parseFloat(btn.dataset.ev),
+          stake: parseFloat(btn.dataset.stake),
+          status: 'pending',
+          timestamp: new Date(btn.dataset.gameTime).getTime()
+      };
+      
+      Tracker.addBet(betData);
 
-    btn.textContent = "Tracked!";
-    btn.classList.remove("btn-primary");
-    btn.classList.add("btn-success");
-    btn.disabled = true;
+      btn.textContent = "Tracked!";
+      btn.classList.remove('btn-primary');
+      btn.classList.add('btn-success');
+      btn.disabled = true;
   },
 
   _populateFilters() {
-    const bookFilter = document.getElementById("ev-book-filter");
-    const marketFilter = document.getElementById("ev-market-filter");
+    const bookSet = new Set(), marketSet = new Set();
+    this.state.evBets.forEach((bet) => {
+      bookSet.add(bet.book.bookmaker);
+      marketSet.add(bet.marketKey);
+    });
 
-    if (bookFilter && bookFilter.options.length <= 1) {
-        const uniqueBooks = [...new Set(this.state.evBets.map(bet => bet.book.bookmaker))];
-        uniqueBooks.sort().forEach(book => {
-            bookFilter.add(new Option(book, book));
+    const bookFilter = document.getElementById("ev-book-filter");
+    if(bookFilter.options.length === 1) { // Only populate once
+        Array.from(bookSet).sort().forEach((book) => {
+            bookFilter.innerHTML += `<option value="${book}">${book}</option>`;
         });
     }
-    if (marketFilter && marketFilter.options.length <= 1) {
-        const uniqueMarkets = [...new Set(this.state.evBets.map(bet => bet.marketKey))];
-        uniqueMarkets.sort().forEach(market => {
-            marketFilter.add(new Option(market.charAt(0).toUpperCase() + market.slice(1), market));
+
+    const marketFilter = document.getElementById("ev-market-filter");
+    if(marketFilter.options.length === 1) { // Only populate once
+        Array.from(marketSet).sort().forEach((market) => {
+            marketFilter.innerHTML += `<option value="${market}">${market.replace(/_/g, " ")}</option>`;
         });
     }
   },
 
   calculateEVBets() {
+    this.state.evBets = [];
     const allData = [...App.state.allGameData, ...App.state.allPropData];
-    const evBets = [];
 
     allData.forEach(item => {
         const isProp = !!item.propId;
-        const markets = isProp ? [item.market] : ['moneyline', 'spreads', 'totals'];
+        const markets = isProp ? [item] : ['moneyline', 'spreads', 'totals'];
 
         markets.forEach(marketKey => {
             const lines = (isProp || marketKey === 'moneyline') ? [item] : (item[marketKey] || []);
-            
             lines.forEach(line => {
-                if(!line.marketOdds) return;
+                const consensus = line.evTabTrueOdds || line.trueOdds;
+                if (!consensus || !line.bookmakerOdds) return;
 
-                const sides = isProp ? ['over', 'under'] : ['oddsA', 'oddsB'];
-                sides.forEach(sideKey => {
-                    const odds = line.marketOdds[sideKey];
-                    if (odds === null) return;
-                    
-                    const trueOddsKey = isProp ? `trueOdds_${sideKey}` : (sideKey === 'oddsA' ? 'oddsA' : 'oddsB');
-                    const trueOdds = line.trueOdds ? line.trueOdds[trueOddsKey] : null;
-                    if(trueOdds === null || typeof trueOdds === 'undefined') return;
+                const trueProbA = App.helpers.americanToProb(consensus.oddsA);
+                const trueProbB = App.helpers.americanToProb(consensus.oddsB);
 
-                    const marketProb = App.helpers.americanToProb(odds);
-                    const trueProb = App.helpers.americanToProb(trueOdds);
-                    const ev = (trueProb / marketProb) - 1;
-
-                    if (ev > 0) {
-                        evBets.push({
-                            ev,
-                            trueProb,
-                            odds,
-                            book: { bookmaker: line.bookmaker, lastUpdate: line.lastUpdate },
-                            marketKey,
-                            data: item,
-                            line: isProp ? null : line,
-                            side: isProp ? (sideKey === 'over' ? 'Over' : 'Under') : (sideKey === 'oddsA' ? 'A' : 'B'),
-                            type: isProp ? 'prop' : 'game'
-                        });
+                line.bookmakerOdds.forEach(book => {
+                    if (book.vigOdds && book.vigOdds.oddsA != null) {
+                        const evA = trueProbA * App.helpers.americanToDecimal(book.vigOdds.oddsA) - 1;
+                        if (evA > 0) {
+                            this.state.evBets.push({
+                                type: "game", data: item, line, book, side: "A",
+                                odds: book.vigOdds.oddsA, ev: evA, trueProb: trueProbA, marketKey,
+                            });
+                        }
+                    }
+                    if (book.vigOdds && book.vigOdds.oddsB != null) {
+                        const evB = trueProbB * App.helpers.americanToDecimal(book.vigOdds.oddsB) - 1;
+                        if (evB > 0) {
+                            this.state.evBets.push({
+                                type: "game", data: item, line, book, side: "B",
+                                odds: book.vigOdds.oddsB, ev: evB, trueProb: trueProbB, marketKey,
+                            });
+                        }
                     }
                 });
             });
         });
     });
-    return evBets;
   },
 
   renderEVBets() {
     const slate = document.getElementById("ev-bets-slate");
-    if (!slate) return;
-    
-    const bankroll = parseFloat(document.getElementById('ev-bankroll')?.value) || Tracker.state.availableBankroll;
-    document.getElementById('ev-bankroll').value = bankroll.toFixed(2);
-    
-    const kellyMultiplier = parseFloat(document.getElementById("ev-kelly-multiplier")?.value) || 0.5;
-    const selectedBook = document.getElementById("ev-book-filter")?.value;
-    const minEv = (parseFloat(document.getElementById("ev-min-ev-filter")?.value) || 0) / 100;
-    const maxEvInput = document.getElementById("ev-max-ev-filter");
-    const maxEv = maxEvInput?.value ? parseFloat(maxEvInput.value) / 100 : Infinity;
-    const selectedMarket = document.getElementById("ev-market-filter")?.value;
-    const searchTerm = document.getElementById("ev-search-filter")?.value.toLowerCase();
+    const bankroll = parseFloat(document.getElementById("ev-bankroll").value) || 0;
+    const kellyMultiplier = parseFloat(document.getElementById("ev-kelly-multiplier").value) || 0.5;
+    const selectedBook = document.getElementById("ev-book-filter").value;
+    const selectedMarket = document.getElementById("ev-market-filter").value;
+    const searchTerm = document.getElementById("ev-search-filter").value.toLowerCase();
+    const minEv = (parseFloat(document.getElementById("ev-min-ev-filter").value) || 0) / 100;
+    const minOdds = parseFloat(document.getElementById("ev-min-odds-filter").value) || -Infinity;
+    const maxOdds = parseFloat(document.getElementById("ev-max-odds-filter").value) || Infinity;
 
     const filteredBets = this.state.evBets.filter(bet => {
-        const evCondition = bet.ev >= minEv && bet.ev <= maxEv;
+        const evCondition = bet.ev >= minEv;
         const bookCondition = selectedBook === "all" || bet.book.bookmaker === selectedBook;
         const marketCondition = selectedMarket === "all" || bet.marketKey === selectedMarket;
+        const oddsCondition = bet.odds >= minOdds && bet.odds <= maxOdds;
         let searchCondition = true;
         if (searchTerm) {
             const teamA = bet.data.teamA.toLowerCase();
@@ -174,11 +159,11 @@ export const EVBets = {
             const player = (bet.data.player || "").toLowerCase();
             searchCondition = teamA.includes(searchTerm) || teamB.includes(searchTerm) || player.includes(searchTerm);
         }
-        return evCondition && bookCondition && marketCondition && searchCondition;
+        return evCondition && bookCondition && marketCondition && oddsCondition && searchCondition;
     });
 
     if (filteredBets.length === 0) {
-      slate.innerHTML = `<p class="text-center text-main-secondary col-span-full">No +EV bets found matching your criteria.</p>`;
+      slate.innerHTML = `<p class="text-center text-main-secondary">No +EV bets found matching your criteria.</p>`;
       return;
     }
     
@@ -193,7 +178,7 @@ export const EVBets = {
   createEVBetCard(bet, bankroll, kellyMultiplier) {
     const card = document.createElement("div");
     card.className = "game-card p-4 rounded-lg";
-    
+
     let stakeHtml = "", stakeValue = 0;
     if (bankroll > 0) {
         const p = bet.trueProb;
@@ -203,44 +188,38 @@ export const EVBets = {
             const kellyFraction = ((b * p - q) / b) * kellyMultiplier;
             stakeValue = bankroll * kellyFraction;
             if (stakeValue > 0.01) {
-                stakeHtml = `<div class="text-right">
-                    <p class="text-xl font-bold text-main-primary leading-none">$${stakeValue.toFixed(2)}</p>
-                    <p class="text-xs text-main-secondary leading-none">(${(kellyFraction * 100).toFixed(2)}% Kelly)</p>
-                </div>`;
+                stakeHtml = `<div class="text-right"><p class="text-xl font-bold text-main-primary leading-none">$${stakeValue.toFixed(2)}</p></div>`;
             }
         }
     }
-    
+
     let topHtml, bottomHtml, betDescription;
-    if (bet.type === "prop") {
-      const prop = bet.data;
-      const propMarketName = prop.market.replace("player_", "").replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-      topHtml = `<p class="font-bold text-lg text-main-primary">${prop.player}</p><p class="text-sm text-main-secondary">${prop.teamB} @ ${prop.teamA}</p>`;
-      betDescription = `${bet.side} ${prop.point} ${propMarketName}`;
-      bottomHtml = `<p class="font-bold text-lg text-accent-blue">${betDescription}</p>`;
-    } else {
-      const game = bet.data;
-      if (bet.marketKey === "moneyline") {
-        betDescription = bet.side === "A" ? game.teamA : game.teamB;
-      } else if (bet.marketKey === "spreads") {
-        const point = bet.side === "A" ? bet.line.point : -bet.line.point;
-        const teamName = bet.side === "A" ? game.teamA : game.teamB;
-        betDescription = `${teamName} ${App.helpers.formatPoint(point)}`;
-      } else { // Totals
-        betDescription = `${bet.side === "A" ? "Over" : "Under"} ${bet.line.point}`;
-      }
-      topHtml = `<p class="font-bold text-lg text-main-primary">${game.teamB} @ ${game.teamA}</p><p class="text-sm text-main-secondary">${game.sport}</p>`;
-      bottomHtml = `<p class="font-bold text-lg text-accent-blue">${betDescription}</p>`;
+    if (bet.type === 'game') {
+        const game = bet.data;
+        if (bet.marketKey === "moneyline") {
+            betDescription = bet.side === "A" ? game.teamA : game.teamB;
+        } else if (bet.marketKey === "spreads") {
+            const point = bet.side === "A" ? bet.line.point : -bet.line.point;
+            const teamName = bet.side === "A" ? game.teamA : game.teamB;
+            betDescription = `${teamName} ${App.helpers.formatPoint(point)}`;
+        } else { // Totals
+            betDescription = `${bet.side === "A" ? "Over" : "Under"} ${bet.line.point}`;
+        }
+        topHtml = `<p class="font-bold text-lg text-main-primary">${game.teamB} @ ${game.teamA}</p>`;
+        bottomHtml = `<p class="font-bold text-lg text-accent-blue">${betDescription}</p>`;
+    } else { // Prop
+        const prop = bet.data;
+        betDescription = `${prop.player} ${bet.side} ${prop.point}`;
+        topHtml = `<p class="font-bold text-lg text-main-primary">${prop.player}</p>`;
+        bottomHtml = `<p class="font-bold text-lg text-accent-blue">${betDescription}</p>`;
     }
 
     card.innerHTML = `
         <div class="flex justify-between items-start">
             <div class="flex-grow">${topHtml}</div>
-            <div class="text-right flex-shrink-0 ml-4 flex items-center space-x-3">
-                <div>
-                    <p class="font-semibold text-main-primary">${App.helpers.formatOdds(bet.odds)}</p>
-                    <p class="text-sm text-main-secondary">${bet.book.bookmaker}</p>
-                </div>
+            <div class="text-right flex-shrink-0 ml-4">
+                <p class="font-semibold text-main-primary">${App.helpers.formatOdds(bet.odds)}</p>
+                <p class="text-sm text-main-secondary">${bet.book.bookmaker}</p>
             </div>
         </div>
         <div class="p-3 rounded-md mt-2" style="background-color: var(--bg-secondary);">
@@ -253,19 +232,17 @@ export const EVBets = {
                 </div>
                 <div class="flex flex-col items-end">
                     ${stakeHtml}
-                    ${stakeValue > 0.01 ? `<button class="btn btn-primary btn-sm mt-2 btn-track-bet"
-                        data-team-a="${bet.data.teamA}"
-                        data-team-b="${bet.data.teamB}"
-                        data-game-time="${bet.data.gameTime}"
-                        data-bet="${betDescription}"
-                        data-odds="${bet.odds}"
-                        data-ev="${(bet.ev * 100).toFixed(2)}"
+                    <button class="btn btn-primary btn-sm mt-2 btn-track-bet"
+                        data-team-a="${bet.data.teamA}" data-team-b="${bet.data.teamB}"
+                        data-game-time="${bet.data.gameTime}" data-bet="${betDescription}"
+                        data-odds="${bet.odds}" data-ev="${(bet.ev * 100).toFixed(2)}"
                         data-stake="${stakeValue.toFixed(2)}">
                         Track Bet
-                    </button>` : ''}
+                    </button>
                 </div>
             </div>
-        </div>`;
+        </div>
+    `;
     return card;
   },
 };

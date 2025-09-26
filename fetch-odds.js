@@ -811,7 +811,8 @@ function processMoneylineMarket(game, allOdds, bookWeights) {
   const trueMarketOdds = calculateConsensusLine(marketOddsList, true);
   const evTabTrueOdds = calculateConsensusLine(evTabPool, true);
 
-  if (trueOdds && marketOdds && trueMarketOdds && evTabTrueOdds) {
+  // **FIXED**: This now only requires the essential consensus odds to be calculated.
+  if (trueOdds && evTabTrueOdds) {
     return {
       trueOdds,
       marketOdds,
