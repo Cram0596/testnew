@@ -79,8 +79,8 @@ export const Dashboard = {
                     const lines = Array.isArray(game[market]) ? game[market] : [game[market]];
                     lines.forEach(line => {
                         const metrics = this.calculateLineMetrics(line);
-                        // **FIXED**: This was the bug. It now correctly includes all games,
-                        // not just those with a calculated edge.
+                        // **FIXED**: This was the bug. The overly restrictive "if (metrics.maxEdge > 0)"
+                        // condition has been removed to ensure all games are displayed.
                         combinedData.push({ ...game, market, line, ...metrics, type: 'game' });
                     });
                 }
