@@ -1,3 +1,5 @@
+// js/app.js
+
 import { Dashboard } from "./dashboard.js";
 import { EVBets } from "./ev_bets.js";
 import { Tracker } from "./tracker.js";
@@ -8,11 +10,7 @@ import { TEAM_LOGO_MAP } from "./mappings.js";
 
 export const App = {
   config: {
-    // Airtable Details
-    airtableApiKey:
-      "patyGcwOjR1vg1cRQ.034c6e3c10bdd976e2c68938769dc42aa95244fa200096d83145e57f209876d3", // Found in your Airtable account page
-    airtableBaseId: "appUo5sd4zfRhSaeX", // Found in the API docs for your base
-    airtableTableName: "Syndicate Results", // The name of your table (e.g., "Bets")
+    // Airtable Details Removed
   },
   elements: {
     themeToggle: document.getElementById("theme-toggle"),
@@ -31,6 +29,9 @@ export const App = {
       "global-kelly-multiplier"
     ),
     evBetsSlate: document.getElementById("ev-bets-slate"),
+    oddsScreenView: document.getElementById("odds-screen-view"), // Added this missing element
+    dashboardView: document.getElementById("dashboard-view"), // Added for consistency
+    evBetsView: document.getElementById("ev-bets-view"), // Added for consistency
     trackerRecord: document.getElementById("tracker-record"),
     trackerPl: document.getElementById("tracker-pl"),
     trackerRoi: document.getElementById("tracker-roi"),
@@ -117,10 +118,10 @@ export const App = {
     },
     LEAGUE_FOLDER_MAP: {
       NFL: "nfl",
-      "NFL Football": "nfl", // Add likely variation
-      americanfootball_nfl: "nfl", // Add API key as a fallback
+      "NFL Football": "nfl", 
+      americanfootball_nfl: "nfl", 
       "NCAAF Football": "ncaaf",
-      americanfootball_ncaaf: "ncaaf", // Add API key as a fallback
+      americanfootball_ncaaf: "ncaaf",
       NCAAB: "ncaab",
       MLB: "mlb",
       WNBA: "wnba",
@@ -158,7 +159,6 @@ export const App = {
           return res.json();
         }),
       ]);
-
       const now = new Date();
       this.state.allGameData = (gameData.games || []).filter(
         (g) => new Date(g.gameTime) > now
@@ -167,36 +167,21 @@ export const App = {
         (p) => new Date(p.gameTime) > now
       );
 
-      // --- CORRECTED INITIALIZATION ---
       UI.init();
-      // Pass the correct HTML elements to each module
       Dashboard.init(this.elements.dashboardView);
       EVBets.init(this.elements.evBetsView);
-      OddsScreen.init(this.elements.oddsScreenView);
-      // The original Tracker and System from testnew don't need arguments
       Tracker.init();
       System.init();
-
+      OddsScreen.init(this.elements.oddsScreenView);
       console.log("NOVA Sports Capital Initialized");
-
     } catch (error) {
       console.error("Failed to load initial data:", error);
-      if (this.elements.gameSlate) {
-          this.elements.gameSlate.innerHTML = `<p class="text-center text-red-500 col-span-full">${error.message}</p>`;
-      }
+      this.elements.gameSlate.innerHTML = `<p class="text-center text-red-500 col-span-full">${error.message}</p>`;
     } finally {
       this.elements.loadingSpinner.classList.add("hidden");
     }
   },
 };
 
-    UI.init();
-    Dashboard.init();
-    EVBets.init();
-    Tracker.init();
-    System.init();
-    OddsScreen.init();
-    console.log("NOVA Sports Capital Initialized");
-  };
-
-App.init();
+// This is the corrected way to start the application
+document.addEventListener("DOMContentLoaded", () => App.init());
