@@ -4,7 +4,6 @@ import { App } from "./app.js";
 export const Tracker = {
   state: {
     loggedBets: [],
-    currentBetToLog: null,
     initialBankroll: 1000,
     availableBankroll: 1000,
   },
@@ -16,7 +15,7 @@ export const Tracker = {
     if (savedBankroll) {
         this.state.initialBankroll = parseFloat(savedBankroll);
     }
-    
+
     const initialBankrollInput = document.getElementById('initial-bankroll-input');
     if (initialBankrollInput) {
         initialBankrollInput.value = this.state.initialBankroll;
@@ -27,22 +26,9 @@ export const Tracker = {
         });
     }
 
-    // Create and set up the Download and Upload buttons
     this.setupActionButtons();
-
     this.renderPerformanceTracker();
 
-    if(App.elements.modalSaveBtn) {
-        App.elements.modalSaveBtn.addEventListener("click", () =>
-          this.saveTrackedBet()
-        );
-    }
-    if(App.elements.modalCancelBtn) {
-        App.elements.modalCancelBtn.addEventListener("click", () =>
-          App.elements.logPlayModal.classList.add("hidden")
-        );
-    }
-    
     if (App.elements.trackedPlaysList) {
         App.elements.trackedPlaysList.addEventListener("click", (e) => {
           const gradeBtn = e.target.closest(".grade-btn");
@@ -64,30 +50,32 @@ export const Tracker = {
     const refreshBtn = document.getElementById('refresh-tracker-btn');
     if (!refreshBtn) return;
 
-    // Create Download Button
-    const downloadBtn = document.createElement('button');
-    downloadBtn.textContent = 'Download Bets (CSV)';
-    downloadBtn.className = 'btn btn-secondary btn-sm ml-2';
-    downloadBtn.addEventListener('click', () => this.downloadBets());
-    refreshBtn.insertAdjacentElement('afterend', downloadBtn);
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = "flex space-x-2 ml-2";
 
-    // Create Upload Button
+    // Download Button
+    const downloadBtn = document.createElement('button');
+    downloadBtn.textContent = 'Download (CSV)';
+    downloadBtn.className = 'btn btn-secondary btn-sm';
+    downloadBtn.addEventListener('click', () => this.downloadBets());
+    buttonContainer.appendChild(downloadBtn);
+
+    // Upload Button
     const uploadBtn = document.createElement('button');
-    uploadBtn.textContent = 'Upload Bets (CSV)';
-    uploadBtn.className = 'btn btn-secondary btn-sm ml-2';
-    
+    uploadBtn.textContent = 'Upload (CSV)';
+    uploadBtn.className = 'btn btn-secondary btn-sm';
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = '.csv';
     fileInput.style.display = 'none';
-
     uploadBtn.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
-    
-    downloadBtn.insertAdjacentElement('afterend', uploadBtn);
-    downloadBtn.insertAdjacentElement('afterend', fileInput);
+    buttonContainer.appendChild(uploadBtn);
+    buttonContainer.appendChild(fileInput);
+
+    refreshBtn.parentElement.appendChild(buttonContainer);
   },
-  
+
   handleFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -97,7 +85,7 @@ export const Tracker = {
           const text = e.target.result;
           const bets = this.parseCSV(text);
           if (bets) {
-              this.state.loggedBets = bets;
+              this.state.loggedBets = this.state.loggedBets.concat(bets);
               localStorage.setItem("loggedBets", JSON.stringify(this.state.loggedBets));
               this.renderPerformanceTracker();
               alert('Bets uploaded successfully!');
@@ -118,7 +106,6 @@ export const Tracker = {
             let betObject = {};
             header.forEach((key, index) => {
                 const value = values[index];
-                // Convert numeric strings to numbers
                 betObject[key] = !isNaN(parseFloat(value)) && isFinite(value) ? parseFloat(value) : value;
             });
             return betObject;
@@ -139,7 +126,7 @@ export const Tracker = {
       localStorage.setItem("loggedBets", JSON.stringify(this.state.loggedBets));
       this.renderPerformanceTracker();
   },
-  
+
   deleteBet(betId) {
     this.state.loggedBets = this.state.loggedBets.filter(bet => bet.id !== betId);
     localStorage.setItem("loggedBets", JSON.stringify(this.state.loggedBets));
@@ -175,7 +162,7 @@ export const Tracker = {
       totalProfit = 0,
       inPlay = 0;
 
-    const sortedBets = [...bets].sort((a, b) => b.timestamp - a.timestamp);
+    const sortedBets = [...bets].sort((a, b) => b.id - a.id);
 
     if (sortedBets.length === 0) {
       listElement.innerHTML =
@@ -200,11 +187,11 @@ export const Tracker = {
       if (dateInfoEl)
         dateInfoEl.textContent = new Date(bet.timestamp).toLocaleString();
       if (playDetailsEl)
-        playDetailsEl.textContent = `$${bet.stake.toFixed(2)} on ${
+        playDetailsEl.textContent = `$${parseFloat(bet.stake).toFixed(2)} on ${
           bet.sideName
         } at ${App.helpers.formatOdds(bet.odds)}`;
       if (edgeDetailsEl && !isNaN(bet.edge))
-        edgeDetailsEl.textContent = `${bet.edge.toFixed(2)}%`;
+        edgeDetailsEl.textContent = `${parseFloat(bet.edge).toFixed(2)}%`;
 
       if (statusContainer) {
         if (bet.status === "pending") {
@@ -214,7 +201,7 @@ export const Tracker = {
             <button class="grade-btn btn-danger btn-sm" data-id="${bet.id}" data-result="loss">Loss</button>
             <button class="delete-btn btn btn-danger btn-sm" data-id="${bet.id}">🗑️</button>`;
         } else {
-          let statusClass = "text-main-secondary"; 
+          let statusClass = "text-main-secondary";
           if (bet.status === "win") statusClass = "text-green-500";
           if (bet.status === "loss") statusClass = "text-red-500";
           statusContainer.innerHTML = `<span class="font-bold ${statusClass}">${bet.status.toUpperCase()}</span>
@@ -223,16 +210,16 @@ export const Tracker = {
       }
 
       if (bet.status === "pending") {
-          inPlay += bet.stake;
+          inPlay += parseFloat(bet.stake);
       } else {
-        totalWagered += bet.stake;
+        totalWagered += parseFloat(bet.stake);
         if (bet.status === "win") {
           wins++;
           totalProfit +=
-            bet.stake * (App.helpers.americanToDecimal(bet.odds) - 1);
+            parseFloat(bet.stake) * (App.helpers.americanToDecimal(bet.odds) - 1);
         } else if (bet.status === "loss") {
           losses++;
-          totalProfit -= bet.stake;
+          totalProfit -= parseFloat(bet.stake);
         } else if (bet.status === "push") {
           pushes++;
         }
@@ -255,14 +242,14 @@ export const Tracker = {
     }`;
     const roi = totalWagered > 0 ? (totalProfit / totalWagered) * 100 : 0;
     roiEl.textContent = `${roi.toFixed(2)}%`;
-    
+
     const totalBankroll = this.state.initialBankroll + totalProfit;
     this.state.availableBankroll = totalBankroll - inPlay;
-    
+
     const totalBankrollEl = document.getElementById('tracker-total-bankroll');
     const inPlayEl = document.getElementById('tracker-in-play');
     const availableEl = document.getElementById('tracker-available');
-    
+
     if (totalBankrollEl) totalBankrollEl.textContent = `$${totalBankroll.toFixed(2)}`;
     if (inPlayEl) inPlayEl.textContent = `$${inPlay.toFixed(2)}`;
     if (availableEl) {
@@ -270,9 +257,8 @@ export const Tracker = {
         availableEl.classList.toggle('text-green-500', this.state.availableBankroll >= 0);
         availableEl.classList.toggle('text-red-500', this.state.availableBankroll < 0);
     }
-
   },
-  
+
   downloadBets() {
     const bets = this.state.loggedBets;
     if (bets.length === 0) {
@@ -282,7 +268,7 @@ export const Tracker = {
     const header = Object.keys(bets[0]).join(',');
     const csv = bets.map(row => Object.values(row).map(v => `"${v}"`).join(',')).join('\n');
     const csvContent = `data:text/csv;charset=utf-8,${header}\n${csv}`;
-    
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
