@@ -191,9 +191,12 @@
         background-color: rgba(34, 197, 94, 0.15); /* Greenish highlight */
         border-radius: 4px;
       }
-      .view.hidden {
+      .view {
         display: none;
-       }
+      }
+      .view.active-view {
+        display: block;
+      }
     </style>
   </head>
   <body class="p-4 md:p-8">
@@ -327,7 +330,7 @@
         </div>
 
         <div id="main-views-container">
-          <div id="dashboard-view" class="view">
+          <div id="dashboard-view" class="view active-view">
             <div
               class="flex flex-col md:flex-row justify-between items-start mb-8 gap-4"
             >
@@ -444,13 +447,22 @@
               id="loading-spinner"
               class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 col-span-full hidden"
             >
-              </div>
+             </div>
           </div>
 
           <div id="ev-bets-view" class="view hidden">
-            <div id="ev-controls" class="flex flex-wrap items-end gap-4 p-4 mb-6 border border-border-primary rounded-lg bg-tertiary">
+            <h2 class="text-2xl font-bold text-main-primary mb-8">
+              EV Bets Finder
+            </h2>
+            <div
+              class="flex flex-wrap items-end gap-4 p-4 mb-6 border border-border-primary rounded-lg bg-tertiary"
+            >
               <div class="input-group">
-                <label for="member-selector" class="block text-sm font-medium mb-1 text-main-secondary">Member</label>
+                <label
+                  for="member-selector"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Member</label
+                >
                 <select id="member-selector">
                   <option>QuantSage</option>
                   <option>The Guru</option>
@@ -458,52 +470,128 @@
                 </select>
               </div>
               <div class="input-group">
-                <label for="ev-bankroll" class="block text-sm font-medium mb-1 text-main-secondary">Bankroll ($)</label>
-                <input type="number" id="ev-bankroll" value="1000" class="w-28"/>
+                <label
+                  for="ev-bankroll"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Bankroll ($)</label
+                ><input
+                  type="number"
+                  id="ev-bankroll"
+                  value="1000"
+                  class="w-28"
+                />
               </div>
               <div class="input-group">
-                <label for="ev-kelly-multiplier" class="block text-sm font-medium mb-1 text-main-secondary">Kelly Multiplier</label>
-                <input type="number" id="ev-kelly-multiplier" value="0.5" step="0.1" class="w-28"/>
+                <label
+                  for="ev-kelly-multiplier"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Kelly Multiplier</label
+                ><input
+                  type="number"
+                  id="ev-kelly-multiplier"
+                  value="0.5"
+                  step="0.1"
+                  class="w-28"
+                />
               </div>
               <div class="input-group">
-                <label for="ev-search-filter" class="block text-sm font-medium mb-1 text-main-secondary">Search Player/Team</label>
-                <input type="text" id="ev-search-filter" placeholder="e.g., Yankees, Lebron..." class="w-40"/>
+                <label
+                  for="ev-search-filter"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Search Player/Team</label
+                ><input
+                  type="text"
+                  id="ev-search-filter"
+                  placeholder="e.g., Yankees, Lebron..."
+                  class="w-40"
+                />
               </div>
               <div class="input-group">
-                <label for="ev-min-ev-filter" class="block text-sm font-medium mb-1 text-main-secondary">Min EV (%)</label>
-                <input type="number" id="ev-min-ev-filter" value="0" step="0.1" class="w-24"/>
+                <label
+                  for="ev-min-ev-filter"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Min EV (%)</label
+                ><input
+                  type="number"
+                  id="ev-min-ev-filter"
+                  value="0"
+                  step="0.1"
+                  class="w-24"
+                />
               </div>
               <div class="input-group">
-                <label for="ev-max-ev-filter" class="block text-sm font-medium mb-1 text-main-secondary">Max EV (%)</label>
-                <input type="number" id="ev-max-ev-filter" placeholder="No Max" class="w-24"/>
+                <label
+                  for="ev-max-ev-filter"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Max EV (%)</label
+                ><input
+                  type="number"
+                  id="ev-max-ev-filter"
+                  placeholder="No Max"
+                  class="w-24"
+                />
+              </div>
+
+              <div class="input-group">
+                <label
+                  for="ev-min-odds-filter"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Min Odds</label
+                >
+                <input
+                  type="number"
+                  id="ev-min-odds-filter"
+                  placeholder="-200"
+                  step="10"
+                  class="w-24"
+                />
               </div>
               <div class="input-group">
-                <label for="ev-min-odds-filter" class="block text-sm font-medium mb-1 text-main-secondary">Min Odds</label>
-                <input type="number" id="ev-min-odds-filter" placeholder="-200" step="10" class="w-24"/>
+                <label
+                  for="ev-max-odds-filter"
+                  class="block text-sm font-medium mb-1 text-main-secondary"
+                  >Max Odds</label
+                >
+                <input
+                  type="number"
+                  id="ev-max-odds-filter"
+                  placeholder="+200"
+                  step="10"
+                  class="w-24"
+                />
               </div>
               <div class="input-group">
-                <label for="ev-max-odds-filter" class="block text-sm font-medium mb-1 text-main-secondary">Max Odds</label>
-                <input type="number" id="ev-max-odds-filter" placeholder="+200" step="10" class="w-24"/>
+                <label
+                  for="ev-book-filter"
+                  class="text-main-secondary font-medium mb-1 block"
+                  >Sportsbook</label
+                ><select id="ev-book-filter">
+                  <option value="all">All Books</option>
+                </select>
               </div>
               <div class="input-group">
-                <label for="ev-book-filter" class="text-main-secondary font-medium mb-1 block">Sportsbook</label>
-                <select id="ev-book-filter"><option value="all">All Books</option></select>
-              </div>
-              <div class="input-group">
-                <label for="ev-market-filter" class="text-main-secondary font-medium mb-1 block">Bet Type</label>
-                <select id="ev-market-filter"><option value="all">All Markets</option></select>
+                <label
+                  for="ev-market-filter"
+                  class="text-main-secondary font-medium mb-1 block"
+                  >Bet Type</label
+                ><select id="ev-market-filter">
+                  <option value="all">All Markets</option>
+                </select>
               </div>
             </div>
-            <div id="ev-bets-slate" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+            <div
+              id="ev-bets-slate"
+              class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+            ></div>
           </div>
 
           <div id="tracker-view" class="view hidden">
             <h2 class="text-2xl font-bold text-main-primary text-center mb-4">My Performance Tracker</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                 <div class="bg-secondary p-4 rounded-lg"><label for="initial-bankroll-input" class="text-sm text-main-secondary block mb-1">Initial Bankroll</label><input type="number" id="initial-bankroll-input" value="1000" class="w-full p-2 bg-tertiary rounded-md"></div>
-                 <div class="bg-secondary p-4 rounded-lg text-center"><h4 class="text-lg font-semibold text-main-secondary">Total Bankroll</h4><p id="tracker-total-bankroll" class="text-2xl font-bold text-main-primary">$1000.00</p></div>
-                 <div class="bg-secondary p-4 rounded-lg text-center"><h4 class="text-lg font-semibold text-main-secondary">In Play</h4><p id="tracker-in-play" class="text-2xl font-bold text-main-primary">$0.00</p></div>
-                 <div class="bg-secondary p-4 rounded-lg text-center"><h4 class="text-lg font-semibold text-main-secondary">Available</h4><p id="tracker-available" class="text-2xl font-bold text-green-500">$1000.00</p></div>
+              <div class="bg-secondary p-4 rounded-lg"><label for="initial-bankroll-input" class="text-sm text-main-secondary block mb-1">Initial Bankroll</label><input type="number" id="initial-bankroll-input" value="1000" class="w-full p-2 bg-tertiary rounded-md"></div>
+              <div class="bg-secondary p-4 rounded-lg text-center"><h4 class="text-lg font-semibold text-main-secondary">Total Bankroll</h4><p id="tracker-total-bankroll" class="text-2xl font-bold text-main-primary">$1000.00</p></div>
+              <div class="bg-secondary p-4 rounded-lg text-center"><h4 class="text-lg font-semibold text-main-secondary">In Play</h4><p id="tracker-in-play" class="text-2xl font-bold text-main-primary">$0.00</p></div>
+              <div class="bg-secondary p-4 rounded-lg text-center"><h4 class="text-lg font-semibold text-main-secondary">Available</h4><p id="tracker-available" class="text-2xl font-bold text-green-500">$1000.00</p></div>
             </div>
             <div class="result-card grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-6">
               <div><h4 class="text-lg font-semibold text-main-secondary">Record</h4><p id="tracker-record" class="text-2xl font-bold text-main-primary">0 - 0</p></div>
@@ -515,21 +603,127 @@
           </div>
 
           <div id="system-tracker-view" class="view hidden">
+            <h2 class="text-2xl font-bold text-main-primary text-center mb-4">
+              System Performance
+            </h2>
+            <div class="flex justify-center items-end gap-4 mb-6">
+              <div class="input-group">
+                <label
+                  for="system-sport-filter"
+                  class="text-main-secondary font-medium mb-1 block"
+                  >Sport:</label
+                ><select id="system-sport-filter">
+                  <option value="all">All Sports</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label
+                  for="system-market-filter"
+                  class="text-main-secondary font-medium mb-1 block"
+                  >Market:</label
+                ><select id="system-market-filter">
+                  <option value="all">All Markets</option>
+                  <option value="moneyline">Moneyline</option>
+                  <option value="spreads">Spreads</option>
+                  <option value="totals">Totals</option>
+                </select>
+              </div>
+              <button id="simulate-results-btn" class="btn btn-primary">
+                Simulate Results
+              </button>
             </div>
+            <div
+              class="result-card grid grid-cols-1 md:grid-cols-3 gap-4 text-center mb-6"
+            >
+              <div>
+                <h4 class="text-lg font-semibold text-main-secondary">
+                  Record
+                </h4>
+                <p
+                  id="system-tracker-record"
+                  class="text-2xl font-bold text-main-primary"
+                >
+                  0 - 0
+                </p>
+              </div>
+              <div>
+                <h4 class="text-lg font-semibold text-main-secondary">
+                  Profit/Loss
+                </h4>
+                <p
+                  id="system-tracker-pl"
+                  class="text-2xl font-bold text-main-primary"
+                >
+                  $0.00
+                </p>
+              </div>
+              <div>
+                <h4 class="text-lg font-semibold text-main-secondary">ROI</h4>
+                <p
+                  id="system-tracker-roi"
+                  class="text-2xl font-bold text-main-primary"
+                >
+                  0.00%
+                </p>
+              </div>
+            </div>
+            <div id="system-tracked-plays-list" class="space-y-4"></div>
+          </div>
 
           <div id="odds-screen-view" class="view hidden">
+            <div class="flex justify-between items-center mb-6">
+              <div class="flex items-center">
+                <button
+                  id="odds-screen-back-btn"
+                  class="btn btn-secondary mr-4"
+                >
+                  &larr; Back
+                </button>
+                <h2
+                  id="odds-screen-title"
+                  class="text-xl md:text-2xl font-bold text-main-primary"
+                ></h2>
+              </div>
+              <div class="flex items-center space-x-3">
+                <span class="text-sm font-medium text-main-secondary"
+                  >Show Vig-Free</span
+                >
+                <label for="vig-free-toggle" class="relative inline-block w-10 h-6"
+                  ><input
+                    type="checkbox"
+                    id="vig-free-toggle"
+                    class="sr-only peer" />
+                  <div class="absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-tertiary border border-border-primary rounded-full transition-colors peer-checked:bg-accent-red peer-checked:border-accent-red"></div>
+                  <div class="absolute cursor-pointer top-1 left-1 bg-text-secondary w-4 h-4 rounded-full transition-transform peer-checked:translate-x-4 peer-checked:bg-white"></div
+                ></label>
+              </div>
             </div>
+            <p
+              id="odds-screen-subtitle"
+              class="text-main-secondary -mt-4 mb-6"
+            ></p>
+            <div id="best-line-summary" class="mb-6"></div>
+            <div id="odds-comparison-container" class="space-y-6"></div>
+          </div>
         </div>
       </div>
     </div>
-    <div id="log-play-modal" class="modal-overlay hidden">
-       </div>
-    <div id="odds-modal" class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm hidden">
-       </div>
-    <div id="settings-modal" class="modal-overlay hidden">
-       </div>
+    <div id="log-play-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
+      </div>
+
+    <div
+      id="odds-modal"
+      class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm hidden"
+    >
+      </div>
+
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
+      </div>
+
     <template id="tracked-play-card-template">
-      <div class="tracked-play-card bg-tertiary p-4 rounded-lg border border-border-primary">
+      <div
+        class="tracked-play-card bg-tertiary p-4 rounded-lg border border-border-primary"
+      >
         <div class="flex justify-between items-start">
           <div>
             <p class="font-bold text-main-primary"></p>
@@ -543,6 +737,7 @@
         </div>
       </div>
     </template>
+
     <script type="module" src="js/app.js"></script>
   </body>
 </html>
