@@ -160,8 +160,8 @@ export const App = {
       ]);
       const now = new Date();
       
-      // **FIXED**: Directly assign gameData since it's already an array
-      this.state.allGameData = (gameData || []).filter(
+      // **FIXED**: Access the 'games' array inside the gameData object
+      this.state.allGameData = (gameData.games || []).filter(
         (g) => new Date(g.gameTime) > now
       );
       this.state.allPropData = (propData.props || []).filter(
