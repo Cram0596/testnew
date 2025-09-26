@@ -36,7 +36,6 @@ export const Dashboard = {
             });
         }
         
-        // Event listener for the entire game slate
         if (App.elements.gameSlate) {
             App.elements.gameSlate.addEventListener("click", (e) => {
                 const starButton = e.target.closest(".watchlist-star");
@@ -46,27 +45,7 @@ export const Dashboard = {
                 if (starButton) {
                     this.handleWatchlistClick(starButton);
                 } else if (quickTrackBtn) {
-                    // **FIXED**: Directly call the global Tracker's addBet method
-                    const item = JSON.parse(card.dataset.item);
-                    const bankroll = parseFloat(App.elements.globalBankrollInput.value);
-                    const kellyMultiplier = parseFloat(App.elements.globalKellyMultiplierInput.value);
-                    const { side, stake, odds, edge } = this.getBestBet(item, bankroll, kellyMultiplier);
-
-                    if (stake > 0) {
-                        const betData = {
-                            teamA: item.teamA,
-                            teamB: item.teamB,
-                            sideName: this.getSideName(item, side),
-                            odds,
-                            edge,
-                            stake,
-                            status: 'pending',
-                            timestamp: new Date(item.gameTime).getTime()
-                        };
-                        Tracker.addBet(betData);
-                        quickTrackBtn.textContent = "Tracked";
-                        quickTrackBtn.disabled = true;
-                    }
+                    this.handleQuickTrack(quickTrackBtn);
                 } else if (card) {
                     this.handleCardClick(card);
                 }
@@ -100,9 +79,9 @@ export const Dashboard = {
                     const lines = Array.isArray(game[market]) ? game[market] : [game[market]];
                     lines.forEach(line => {
                         const metrics = this.calculateLineMetrics(line);
-                        if(metrics.maxEdge > 0) {
-                             combinedData.push({ ...game, market, line, ...metrics, type: 'game' });
-                        }
+                        // **FIXED**: This was the bug. It now correctly includes all games,
+                        // not just those with a calculated edge.
+                        combinedData.push({ ...game, market, line, ...metrics, type: 'game' });
                     });
                 }
             });
@@ -169,7 +148,7 @@ export const Dashboard = {
             slate.appendChild(card);
         });
     },
-
+    
     createCard(item) {
         const card = document.createElement("div");
         card.className = "game-card rounded-lg p-4 flex flex-col space-y-3 card-fade-in";
@@ -289,7 +268,7 @@ export const Dashboard = {
     },
 
     calculateLineMetrics(line) {
-        if (!line.trueOdds || !line.marketOdds) return { maxEdge: -1 };
+        if (!line.trueOdds || !line.marketOdds) return { maxEdge: -1, trueProbA: 0.5, trueProbB: 0.5 };
         const trueProbA = App.helpers.americanToProb(line.trueOdds.oddsA);
         const marketProbA = App.helpers.americanToProb(line.marketOdds.oddsA);
         const edgeA = trueProbA - marketProbA;
@@ -314,6 +293,34 @@ export const Dashboard = {
         }
         localStorage.setItem("starredGames", JSON.stringify(App.state.starredGames));
         if(this.state.isWatchlistFilterActive) this.renderAll();
+    },
+
+    handleQuickTrack(trackButton) {
+        const card = trackButton.closest('.game-card');
+        const item = JSON.parse(card.dataset.item);
+        const bankroll = parseFloat(App.elements.globalBankrollInput.value);
+        const kellyMultiplier = parseFloat(App.elements.globalKellyMultiplierInput.value);
+        const {side, stake, odds, edge} = this.getBestBet(item, bankroll, kellyMultiplier);
+
+        if (stake <= 0) return;
+
+        const betData = {
+            teamA: item.teamA,
+            teamB: item.teamB,
+            sideName: this.getSideName(item, side),
+            odds: odds,
+            edge: edge,
+            stake: stake,
+            status: 'pending',
+            timestamp: new Date(item.gameTime).getTime()
+        };
+        
+        Tracker.addBet(betData);
+
+        trackButton.textContent = "Tracked";
+        trackButton.classList.remove('btn-primary');
+        trackButton.classList.add('bg-green-600');
+        trackButton.disabled = true;
     },
 
     handleCardClick(card) {
