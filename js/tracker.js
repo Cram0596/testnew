@@ -48,11 +48,10 @@ export const Tracker = {
 
   setupActionButtons() {
     const refreshBtn = document.getElementById('refresh-tracker-btn');
-    // **FIXED**: Prevent creating buttons if they already exist
-    if (!refreshBtn || document.getElementById('tracker-button-container')) return; 
+    if (!refreshBtn || document.getElementById('tracker-button-container')) return;
 
     const buttonContainer = document.createElement('div');
-    buttonContainer.id = 'tracker-button-container'; // Add ID to prevent duplicates
+    buttonContainer.id = 'tracker-button-container';
     buttonContainer.className = "flex space-x-2 ml-2";
 
     const downloadBtn = document.createElement('button');
@@ -73,7 +72,6 @@ export const Tracker = {
     buttonContainer.appendChild(uploadBtn);
     buttonContainer.appendChild(fileInput);
 
-    // **FIXED**: Append the container to the same parent as the refresh button
     refreshBtn.parentElement.appendChild(buttonContainer);
   },
 

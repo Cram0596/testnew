@@ -6,34 +6,50 @@ import { Tracker } from "./tracker.js";
 export const EVBets = {
   state: {
     evBets: [],
-    modalSortConfig: { column: "bookmaker", direction: "asc" },
   },
 
   init(viewElement) {
-      this.view = viewElement;
-      this.processAndDisplayEVBets();
+    this.view = viewElement;
+    // The content is generated dynamically when the tab is clicked.
+    // We add a listener to the tab itself to trigger the loading.
+    const evBetsTab = document.getElementById("tab-ev-bets");
+    if (evBetsTab && !evBetsTab.hasAttribute('data-listener-added')) {
+        evBetsTab.addEventListener("click", () => this.processAndDisplayEVBets());
+        evBetsTab.setAttribute('data-listener-added', 'true');
+    }
   },
 
   processAndDisplayEVBets() {
+    // Ensure the view is ready
+    if (!this.view.querySelector('#ev-bets-slate')) {
+        this.view.innerHTML = `
+            <div id="ev-controls" class="flex flex-wrap items-end gap-4 p-4 border border-border-primary rounded-lg bg-tertiary mb-6">
+                 <div class="input-group"><label for="ev-bankroll" class="block text-sm font-medium mb-1 text-main-secondary">Bankroll ($)</label><input type="number" id="ev-bankroll" value="1000" class="w-28"></div>
+                 <div class="input-group"><label for="ev-kelly-multiplier" class="block text-sm font-medium mb-1 text-main-secondary">Kelly Multiplier</label><input type="number" id="ev-kelly-multiplier" value="0.5" step="0.1" class="w-28"></div>
+                 <div class="input-group"><label for="ev-book-filter" class="text-main-secondary font-medium mb-1 block">Bookmaker</label><select id="ev-book-filter"><option value="all">All Books</option></select></div>
+                 <div class="input-group"><label for="ev-market-filter" class="text-main-secondary font-medium mb-1 block">Market</label><select id="ev-market-filter"><option value="all">All Markets</option></select></div>
+                 <div class="input-group"><label for="ev-min-ev-filter" class="text-main-secondary font-medium mb-1 block">Min EV (%)</label><input type="number" id="ev-min-ev-filter" value="0" class="w-24"></div>
+                 <div class="input-group"><label for="ev-max-ev-filter" class="text-main-secondary font-medium mb-1 block">Max EV (%)</label><input type="number" id="ev-max-ev-filter" placeholder="No Max" class="w-24"></div>
+                 <div class="input-group flex-grow"><label for="ev-search-filter" class="text-main-secondary font-medium mb-1 block">Search</label><input type="text" id="ev-search-filter" placeholder="Team or Player Name..."></div>
+            </div>
+            <div id="ev-bets-slate" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+        `;
+    }
     this.state.evBets = this.calculateEVBets();
+    this._populateFilters();
     this.renderEVBets();
     this.addEventListeners();
   },
-  
+
   addEventListeners() {
     const controls = [
-      "ev-bankroll",
-      "ev-kelly-multiplier",
-      "ev-book-filter",
-      "ev-min-ev-filter",
-      "ev-max-ev-filter",
-      "ev-market-filter",
-      "ev-search-filter",
+      "ev-bankroll", "ev-kelly-multiplier", "ev-book-filter", 
+      "ev-min-ev-filter", "ev-max-ev-filter", "ev-market-filter", "ev-search-filter"
     ];
     controls.forEach((id) => {
       const el = document.getElementById(id);
       if (el) {
-        const eventType = el.tagName === 'INPUT' && el.type === 'text' ? 'input' : 'change';
+        const eventType = el.tagName === 'INPUT' && el.type !== 'number' ? 'input' : 'change';
         el.addEventListener(eventType, () => this.renderEVBets());
       }
     });
@@ -62,13 +78,30 @@ export const EVBets = {
       timestamp: new Date(btn.dataset.gameTime).getTime(),
     };
     
-    // **FIXED**: This now correctly calls the main tracker module
     Tracker.addBet(betData);
 
     btn.textContent = "Tracked!";
     btn.classList.remove("btn-primary");
-    btn.classList.add("btn-success"); // Changed for better visual feedback
+    btn.classList.add("btn-success");
     btn.disabled = true;
+  },
+
+  _populateFilters() {
+    const bookFilter = document.getElementById("ev-book-filter");
+    const marketFilter = document.getElementById("ev-market-filter");
+
+    if (bookFilter && bookFilter.options.length <= 1) { // Only populate once
+        const uniqueBooks = [...new Set(this.state.evBets.map(bet => bet.book.bookmaker))];
+        uniqueBooks.sort().forEach(book => {
+            bookFilter.add(new Option(book, book));
+        });
+    }
+    if (marketFilter && marketFilter.options.length <= 1) { // Only populate once
+        const uniqueMarkets = [...new Set(this.state.evBets.map(bet => bet.marketKey))];
+        uniqueMarkets.sort().forEach(market => {
+            marketFilter.add(new Option(market.charAt(0).toUpperCase() + market.slice(1), market));
+        });
+    }
   },
 
   calculateEVBets() {
@@ -77,12 +110,15 @@ export const EVBets = {
 
     allData.forEach(item => {
         const isProp = !!item.propId;
+        // Simplified: just check the main markets for games
         const markets = isProp ? [item.market] : ['moneyline', 'spreads', 'totals'];
 
         markets.forEach(marketKey => {
-            const lines = (isProp || marketKey === 'moneyline') ? [item] : item[marketKey] || [];
+            const lines = (isProp || marketKey === 'moneyline') ? [item] : (item[marketKey] || []);
+            
             lines.forEach(line => {
                 if(!line.marketOdds) return;
+
                 const sides = isProp ? ['over', 'under'] : ['oddsA', 'oddsB'];
                 sides.forEach(sideKey => {
                     const odds = line.marketOdds[sideKey];
@@ -90,11 +126,11 @@ export const EVBets = {
                     
                     const trueOddsKey = isProp ? `trueOdds_${sideKey}` : (sideKey === 'oddsA' ? 'oddsA' : 'oddsB');
                     const trueOdds = line.trueOdds ? line.trueOdds[trueOddsKey] : null;
-                    if(trueOdds === null) return;
+                    if(trueOdds === null || typeof trueOdds === 'undefined') return;
 
                     const marketProb = App.helpers.americanToProb(odds);
                     const trueProb = App.helpers.americanToProb(trueOdds);
-                    const ev = trueProb - marketProb;
+                    const ev = (trueProb / marketProb) - 1;
 
                     if (ev > 0) {
                         evBets.push({
@@ -161,18 +197,12 @@ export const EVBets = {
   createEVBetCard(bet, bankroll, kellyMultiplier) {
     const card = document.createElement("div");
     card.className = "game-card p-4 rounded-lg";
-    card.dataset.id = bet.type === "prop" ? bet.data.propId : bet.data.id;
-    card.dataset.market = bet.marketKey;
-    card.dataset.isProp = bet.type === "prop";
-    card.dataset.point = bet.type === 'game' && bet.line ? bet.line.point : bet.data.point;
-
-    const logoSrc = `images/logos/${bet.book.bookmaker}.png`;
-
+    
     let stakeHtml = "", stakeValue = 0;
     if (bankroll > 0) {
         const p = bet.trueProb;
-        const q = 1 - p;
         const b = App.helpers.americanToDecimal(bet.odds) - 1;
+        const q = 1 - p;
         if (b > 0) {
             const kellyFraction = ((b * p - q) / b) * kellyMultiplier;
             stakeValue = bankroll * kellyFraction;
@@ -215,7 +245,6 @@ export const EVBets = {
                     <p class="font-semibold text-main-primary">${App.helpers.formatOdds(bet.odds)}</p>
                     <p class="text-sm text-main-secondary">${bet.book.bookmaker}</p>
                 </div>
-                <img src="${logoSrc}" alt="${bet.book.bookmaker}" class="h-10 w-10 object-contain rounded-md" onerror="this.style.display='none'">
             </div>
         </div>
         <div class="p-3 rounded-md mt-2" style="background-color: var(--bg-secondary);">
