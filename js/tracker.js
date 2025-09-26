@@ -48,9 +48,10 @@ export const Tracker = {
 
   setupActionButtons() {
     const refreshBtn = document.getElementById('refresh-tracker-btn');
-    if (!refreshBtn) return;
+    if (!refreshBtn || document.getElementById('tracker-button-container')) return; // Prevent creating buttons twice
 
     const buttonContainer = document.createElement('div');
+    buttonContainer.id = 'tracker-button-container';
     buttonContainer.className = "flex space-x-2 ml-2";
 
     // Download Button
@@ -94,7 +95,7 @@ export const Tracker = {
           }
       };
       reader.readAsText(file);
-      event.target.value = ''; // Reset file input
+      event.target.value = '';
   },
 
   parseCSV(text) {
@@ -184,7 +185,7 @@ export const Tracker = {
       const statusContainer = cardRoot.querySelector(".status-container");
 
       if (teamInfoEl) teamInfoEl.textContent = `${bet.teamB} @ ${bet.teamA}`;
-      if (dateInfoEl)
+      if (dateInfoEl && bet.timestamp)
         dateInfoEl.textContent = new Date(bet.timestamp).toLocaleString();
       if (playDetailsEl)
         playDetailsEl.textContent = `$${parseFloat(bet.stake).toFixed(2)} on ${
@@ -266,8 +267,12 @@ export const Tracker = {
       return;
     }
     const header = Object.keys(bets[0]).join(',');
-    const csv = bets.map(row => Object.values(row).map(v => `"${v}"`).join(',')).join('\n');
-    const csvContent = `data:text/csv;charset=utf-8,${header}\n${csv}`;
+    const csvRows = bets.map(row => 
+        Object.values(row).map(value => 
+            `"${String(value).replace(/"/g, '""')}"`
+        ).join(',')
+    );
+    const csvContent = `data:text/csv;charset=utf-8,${header}\n${csvRows.join('\n')}`;
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
