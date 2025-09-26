@@ -1,52 +1,37 @@
-import { App } from "./app.js";
 export const UI = {
-  init() {
-    const savedTheme = localStorage.getItem("theme") || "dark";
-    this.applyTheme(savedTheme);
-    App.elements.themeToggle.addEventListener("click", () => {
-      const newTheme =
-        document.documentElement.getAttribute("data-theme") === "dark"
-          ? "light"
-          : "dark";
-      this.applyTheme(newTheme);
+  init: function () {
+    this.tabButtons = document.querySelectorAll(".tab-btn");
+    this.views = document.querySelectorAll(".view");
+
+    this.tabButtons.forEach((button) => {
+      button.addEventListener("click", (e) => {
+        this.switchView(e.currentTarget.dataset.view);
+      });
     });
-    App.elements.tabs.forEach((button) => {
-      button.addEventListener("click", () => this.activateTab(button));
-    });
+
+    // Set initial view - you can change this to 'tracker-view' if you want
+    this.switchView("dashboard-view");
   },
-  applyTheme(theme) {
-    document.documentElement.setAttribute("data-theme", theme);
-    App.elements.themeIconSun.classList.toggle("hidden", theme === "dark");
-    App.elements.themeIconMoon.classList.toggle("hidden", theme === "light");
-    localStorage.setItem("theme", theme);
-  },
-  showView(viewId) {
-    App.elements.views.forEach((view) => {
-      view.classList.add("hidden");
-    });
+
+  switchView: function (viewId) {
+    // Hide all views
+    this.views.forEach((view) => view.classList.add("hidden"));
+
+    // Show the target view
     const targetView = document.getElementById(viewId);
     if (targetView) {
       targetView.classList.remove("hidden");
     }
-  },
-  activateTab(activeButton) {
-    // Deactivate all tab buttons first
-    App.elements.tabs.forEach((button) => {
-      button.classList.remove("border-accent-red", "text-accent-red");
-      button.classList.add(
-        "border-transparent",
-        "text-main-secondary",
-        "hover:text-main-primary",
-        "hover:border-gray-300"
-      );
+
+    // Update button styles
+    this.tabButtons.forEach((button) => {
+      if (button.dataset.view === viewId) {
+        button.classList.add("border-accent-red", "text-main-primary");
+        button.classList.remove("border-transparent", "text-main-secondary");
+      } else {
+        button.classList.remove("border-accent-red", "text-main-primary");
+        button.classList.add("border-transparent", "text-main-secondary");
+      }
     });
-
-    // Activate the clicked tab button
-    activeButton.classList.add("border-accent-red", "text-accent-red");
-    activeButton.classList.remove("border-transparent", "text-main-secondary");
-
-    // Show the target view
-    const viewId = activeButton.dataset.view;
-    this.showView(viewId);
   },
 };
